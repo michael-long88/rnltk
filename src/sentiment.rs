@@ -4,6 +4,7 @@ use std::f64::consts::PI;
 use serde::{Serialize, Deserialize};
 
 use crate::stem;
+use crate::error::RnltkError;
 
 pub type CustomWords = HashMap<String, SentimentDictValue>;
 pub type CustomStems = HashMap<String, SentimentDictValue>;
@@ -557,41 +558,30 @@ impl SentimentModel {
     ///     Err(error_msg) => assert_eq!(error_msg, "Term already exists"),
     /// }
     /// ```
-    pub fn add_term_without_replacement(&mut self, term: &'static str, valence: &f64, arousal: &f64) -> Result<(), Cow<'static, str>>{
+    pub fn add_term_without_replacement(&mut self, term: &'static str, valence: &f64, arousal: &f64) -> Result<(), RnltkError>{
         if self.does_term_exist(term) {
-            return Err(Cow::from("Term already exists"));
+            return Err(RnltkError::SentimentTermExists);
         } else {
-            let stemmed_word = stem::get(term);
-            match stemmed_word {
-                Ok(stem) => {
-                    let word = term.to_string();
-                    let stemmed_word = stem.clone();
-                    let avg = vec![*valence, *arousal];
-                    let std = vec![1.0, 1.0];
-                    let fq = 1;
-                    let word_dict_value = SentimentDictValue {
-                        word,
-                        stem: stemmed_word,
-                        avg,
-                        std
-                    };
-                    let word = stem.clone();
-                    let stem = stem;
-                    let avg = vec![*valence, *arousal];
-                    let std = vec![1.0, 1.0];
-                    let stem_dict_value = SentimentDictValue {
-                        word,
-                        stem,
-                        avg,
-                        std
-                    };
-                    self.custom_words.insert(term.to_string(), word_dict_value);
-                    self.custom_stems.insert(term.to_string(), stem_dict_value);
-                },
-                Err(error_msg) => {
-                    return Err(Cow::from(error_msg));
-                },
-            }
+            let stemmed_word = stem::get(term)?;
+            let word = term.to_string();
+            let avg = vec![*valence, *arousal];
+            let std = vec![1.0, 1.0];
+            let word_dict_value = SentimentDictValue {
+                word: word.clone(),
+                stem: stemmed_word.clone(),
+                avg,
+                std
+            };
+            let avg = vec![*valence, *arousal];
+            let std = vec![1.0, 1.0];
+            let stem_dict_value = SentimentDictValue {
+                word,
+                stem: stemmed_word,
+                avg,
+                std
+            };
+            self.custom_words.insert(term.to_string(), word_dict_value);
+            self.custom_stems.insert(term.to_string(), stem_dict_value);
         }
         Ok(())
     }
@@ -628,7 +618,7 @@ impl SentimentModel {
     ///     Err(error_msg) => assert_eq!(error_msg, "Only supports English words with ASCII characters"),
     /// }
     /// ```
-    pub fn add_term_with_replacement(&mut self, term: &'static str, valence: &f64, arousal: &f64) -> Result<(), Cow<'static, str>>{
+    pub fn add_term_with_replacement(&mut self, term: &'static str, valence: &f64, arousal: &f64) -> Result<(), RnltkError>{
         if self.custom_words.contains_key(term) {
             let dict_value = self.custom_words.get_mut(term).unwrap();
             dict_value.avg[0] = *valence;
@@ -638,36 +628,26 @@ impl SentimentModel {
             dict_value.avg[0] = *valence;
             dict_value.avg[1] = *arousal;
         } else {
-            let stemmed_word = stem::get(term);
-            match stemmed_word {
-                Ok(stem) => {
-                    let word = term.to_string();
-                    let stemmed_word = stem.clone();
-                    let avg = vec![*valence, *arousal];
-                    let std = vec![1.0, 1.0];
-                    let word_dict_value = SentimentDictValue {
-                        word,
-                        stem: stemmed_word,
-                        avg,
-                        std
-                    };
-                    let word = stem.clone();
-                    let stem = stem;
-                    let avg = vec![*valence, *arousal];
-                    let std = vec![1.0, 1.0];
-                    let stem_dict_value = SentimentDictValue {
-                        word,
-                        stem,
-                        avg,
-                        std
-                    };
-                    self.custom_words.insert(term.to_string(), word_dict_value);
-                    self.custom_stems.insert(term.to_string(), stem_dict_value);
-                },
-                Err(error_msg) => {
-                    return Err(Cow::from(error_msg));
-                },
-            }
+            let stemmed_word = stem::get(term)?;
+            let word = term.to_string();
+            let avg = vec![*valence, *arousal];
+            let std = vec![1.0, 1.0];
+            let word_dict_value = SentimentDictValue {
+                word: word.clone(),
+                stem: stemmed_word.clone(),
+                avg,
+                std
+            };
+            let avg = vec![*valence, *arousal];
+            let std = vec![1.0, 1.0];
+            let stem_dict_value = SentimentDictValue {
+                word,
+                stem: stemmed_word,
+                avg,
+                std
+            };
+            self.custom_words.insert(term.to_string(), word_dict_value);
+            self.custom_stems.insert(term.to_string(), stem_dict_value);
         }
         Ok(())
     }
@@ -817,7 +797,7 @@ mod tests {
         let setup = Setup::new();
         let mut sentiment = SentimentModel::new(setup.custom_words);
         let add_sentiment_error = sentiment.add_term_with_replacement("hopè", &8.0, &8.5).unwrap_err();
-        assert_eq!(add_sentiment_error, "Only supports English words with ASCII characters");
+        assert_eq!(add_sentiment_error, RnltkError::StemNonAscii);
     }
 
     #[test]
@@ -825,7 +805,7 @@ mod tests {
         let setup = Setup::new();
         let mut sentiment = SentimentModel::new(setup.custom_words);
         let add_sentiment_error = sentiment.add_term_without_replacement("abduction", &8.0, &8.5).unwrap_err();
-        assert_eq!(add_sentiment_error, "Term already exists");
+        assert_eq!(add_sentiment_error, RnltkError::SentimentTermExists);
     }
 
     #[test]

@@ -1,4 +1,5 @@
 use std::str;
+use crate::error::RnltkError;
 
 /// Member b is a vector of bytes holding a word to be stemmed.
 /// The letters are in b[0], b[1] ... ending at b[z->k]. Member k is readjusted
@@ -25,9 +26,9 @@ struct Stemmer {
 }
 
 impl Stemmer {
-    fn new(word: &str) -> Result<Stemmer, &'static str> {
+    fn new(word: &str) -> Result<Stemmer, RnltkError> {
         if !word.is_ascii() {
-            Err("Only supports English words with ASCII characters")
+            Err(RnltkError::StemNonAscii)
         } else {
             let bytes = word.to_ascii_lowercase().into_bytes();
             let bytes_length = bytes.len();
@@ -498,21 +499,16 @@ impl Stemmer {
     }
 }
 
-pub fn get(word: &str) -> Result<String, &str> {
+pub fn get(word: &str) -> Result<String, RnltkError> {
     if word.len() > 2 {
-        match Stemmer::new(word) {
-            Ok(w) => {
-                let mut mw = w;
-                mw.step1ab();
-                mw.step1c();
-                mw.step2();
-                mw.step3();
-                mw.step4();
-                mw.step5();
-                Ok(mw.get())
-            }
-            Err(e) => Err(e),
-        }
+        let mut mw = Stemmer::new(word)?;
+        mw.step1ab();
+        mw.step1c();
+        mw.step2();
+        mw.step3();
+        mw.step4();
+        mw.step5();
+        Ok(mw.get())
     } else {
         Ok(word.to_owned())
     }
