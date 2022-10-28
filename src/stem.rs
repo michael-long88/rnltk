@@ -523,8 +523,8 @@ mod test_stem {
     use super::get;
     use std::ops::Deref;
 
-    pub static INPUT: &str = include_str!("../test-data/voc.txt");
-    pub static RESULT: &str = include_str!("../test-data/output.txt");
+    pub static INPUT: &str = include_str!("../test_data/voc.txt");
+    pub static RESULT: &str = include_str!("../test_data/output.txt");
 
     fn test_loop<I0: Iterator<Item = T>, I1: Iterator<Item = T>, T: Deref<Target = str>>(
         tests: I0,

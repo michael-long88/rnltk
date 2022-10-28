@@ -5,96 +5,119 @@ use serde::{Serialize, Deserialize};
 
 use crate::stem;
 
-type AnewWords = HashMap<String, SentimentDictValue>;
-type AnewStems = HashMap<String, SentimentDictValue>;
-type HapiWords = HashMap<String, SentimentDictValue>;
-type CustomWords = HashMap<String, SentimentDictValue>;
-type CustomStems = HashMap<String, SentimentDictValue>;
+pub type CustomWords = HashMap<String, SentimentDictValue>;
+pub type CustomStems = HashMap<String, SentimentDictValue>;
 
+/// Struct for creating the basis of the sentiment lexicon.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SentimentDictValue {
-    dict: Dict,
+    /// The full, unstemmed word
     word: String,
+    /// The stemmed version of the word
     stem: String,
+    /// The average values of valence and arousal
+    /// Expected format of vec![5.0, 5.0]
     avg: Vec<f64>,
-    std: Vec<f64>,
-    fq: i64,
+    /// The standard deviation values of valence and arousal
+    /// Expected format of vec![5.0, 5.0]
+    std: Vec<f64>
 }
 
 impl SentimentDictValue {
-    pub fn new(dict: Dict, word: String, stem: String, avg: Vec<f64>, std: Vec<f64>, fq: i64) -> Self {
+    pub fn new(word: String, stem: String, avg: Vec<f64>, std: Vec<f64>) -> Self {
         SentimentDictValue {
-            dict,
             word,
             stem,
             avg,
-            std,
-            fq
+            std
         }
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub enum Dict {
-    #[serde(rename = "anew")]
-    Anew,
-    #[serde(rename = "anew-ex")]
-    AnewEx,
-    #[serde(rename = "happiness")]
-    Happiness,
-    #[serde(rename = "custom")]
-    Custom,
-}
-
-fn get_anew_words() -> AnewWords {
-    let anew_word_dict = include_str!("../data/anew_word.json");
-    let anew_words_sentiment_hashmap: AnewWords = serde_json::from_str(anew_word_dict).unwrap();
-
-    anew_words_sentiment_hashmap
-}
-
-fn get_anew_stems() -> AnewStems {
-    let anew_stem_dict = include_str!("../data/anew_stem.json");
-    let anew_stems_sentiment_hashmap: AnewStems = serde_json::from_str(anew_stem_dict).unwrap();
-
-    anew_stems_sentiment_hashmap
-}
-
-fn get_hapi_words() -> HapiWords {
-    let hapi_word_dict = include_str!("../data/hapi_word.json");
-    let hapi_words_sentiment_hashmap: HapiWords = serde_json::from_str(hapi_word_dict).unwrap();
-
-    hapi_words_sentiment_hashmap
-}
-
 pub struct SentimentModel {
-    anew_words: AnewWords,
-    anew_stems: AnewStems,
-    hapi_words: HapiWords,
     custom_words: CustomWords,
     custom_stems: CustomStems,
 }
 
-impl Default for SentimentModel {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl SentimentModel {
-    pub fn new() -> Self {
-        let custom_words_dict = SentimentDictValue::new(Dict::Custom, "".to_string(), "".to_string(), vec![0.0, 0.0], vec![0.0, 0.0], 0);
-        let custom_words = HashMap::from([("".to_string(), custom_words_dict)]);
-        let custom_stems_dict = SentimentDictValue::new(Dict::Custom, "".to_string(), "".to_string(), vec![0.0, 0.0], vec![0.0, 0.0], 0);
+    /// Creates new instance of SentimentModel
+    /// 
+    /// # Arguments
+    /// 
+    /// * `custom_words` - CustomWords representation of sentiment lexicon
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// 
+    /// let custom_word_dict = "
+    /// {
+    ///     \"abduction\": {
+    ///         \"word\": \"abduction\",
+    ///         \"stem\": \"abduct\",
+    ///         \"avg\": [2.76, 5.53],
+    ///         \"std\": [2.06, 2.43]
+    ///     }
+    /// }";
+    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// 
+    /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
+    /// if sentiment.does_term_exist("abduction") {
+    ///     println!("abduction exists");
+    /// }
+    /// ```
+    pub fn new(custom_words: CustomWords) -> Self {
+        let custom_stems_dict = SentimentDictValue::new("".to_string(), "".to_string(), vec![0.0, 0.0], vec![0.0, 0.0]);
         let custom_stems = HashMap::from([("".to_string(), custom_stems_dict)]);
         
         SentimentModel {
-            anew_words: get_anew_words(),
-            anew_stems: get_anew_stems(),
-            hapi_words: get_hapi_words(),
             custom_words,
             custom_stems,
         }
+    }
+
+    /// Adds new lexicon of stemmed words
+    /// 
+    /// # Arguments
+    /// 
+    /// * `custom_stems` - CustomStems representation of sentiment lexicon
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rnltk::sentiment::{SentimentModel, CustomWords, CustomStems};
+    /// 
+    /// let custom_word_dict = "
+    /// {
+    ///     \"abduction\": {
+    ///         \"word\": \"abduction\",
+    ///         \"stem\": \"abduct\",
+    ///         \"avg\": [2.76, 5.53],
+    ///         \"std\": [2.06, 2.43]
+    ///     }
+    /// }";
+    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// 
+    /// let custom_stem_dict = "
+    /// {
+    ///     \"abduct\": {
+    ///         \"word\": \"abduction\",
+    ///         \"stem\": \"abduct\",
+    ///         \"avg\": [2.76, 5.53],
+    ///         \"std\": [2.06, 2.43]
+    ///     }
+    /// }";
+    /// let custom_stems_sentiment_hashmap: CustomStems = serde_json::from_str(custom_stem_dict).unwrap();
+    /// 
+    /// let mut sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
+    /// sentiment.add_custom_stems(custom_stems_sentiment_hashmap);
+    /// if sentiment.does_term_exist("abduct") {
+    ///     println!("abduct exists");
+    /// }
+    /// ```
+    pub fn add_custom_stems(&mut self, custom_stems: CustomStems) {
+        self.custom_stems = custom_stems        
     }
 
     /// Checks if a term exists in the sentiment dictionaries
@@ -114,7 +137,7 @@ impl SentimentModel {
     /// }
     /// ```
     pub fn does_term_exist(&self, term: &str) -> bool {
-        self.anew_words.contains_key(term) || self.anew_stems.contains_key(term) || self.hapi_words.contains_key(term) || self.custom_words.contains_key(term) || self.custom_stems.contains_key(term)
+        self.custom_words.contains_key(term) || self.custom_stems.contains_key(term)
     }
 
     /// Gets the raw arousal values (average, standard deviation) for a given term
@@ -140,18 +163,6 @@ impl SentimentModel {
 
         if !self.does_term_exist(term) {
             return vec![average, std_dev];
-        } else if self.anew_words.contains_key(term) {
-            let sentiment_info = self.anew_words.get(term).unwrap();
-            average = sentiment_info.avg[1];
-            std_dev = sentiment_info.std[1];
-        } else if self.anew_stems.contains_key(term) {
-            let sentiment_info = self.anew_stems.get(term).unwrap();
-            average = sentiment_info.avg[1];
-            std_dev = sentiment_info.std[1];
-        } else if self.hapi_words.contains_key(term) {
-            let sentiment_info = self.hapi_words.get(term).unwrap();
-            average = sentiment_info.avg[1];
-            std_dev = sentiment_info.std[1];
         } else if self.custom_words.contains_key(term) {
             let sentiment_info = self.custom_words.get(term).unwrap();
             average = sentiment_info.avg[1];
@@ -187,18 +198,6 @@ impl SentimentModel {
 
         if !self.does_term_exist(term) {
             return vec![average, std_dev];
-        } else if self.anew_words.contains_key(term) {
-            let sentiment_info = self.anew_words.get(term).unwrap();
-            average = sentiment_info.avg[0];
-            std_dev = sentiment_info.std[0];
-        } else if self.anew_stems.contains_key(term) {
-            let sentiment_info = self.anew_stems.get(term).unwrap();
-            average = sentiment_info.avg[0];
-            std_dev = sentiment_info.std[0];
-        } else if self.hapi_words.contains_key(term) {
-            let sentiment_info = self.hapi_words.get(term).unwrap();
-            average = sentiment_info.avg[0];
-            std_dev = sentiment_info.std[0];
         } else if self.custom_words.contains_key(term) {
             let sentiment_info = self.custom_words.get(term).unwrap();
             average = sentiment_info.avg[0];
@@ -565,33 +564,26 @@ impl SentimentModel {
             let stemmed_word = stem::get(term);
             match stemmed_word {
                 Ok(stem) => {
-                    let dict = Dict::Custom;
                     let word = term.to_string();
                     let stemmed_word = stem.clone();
                     let avg = vec![*valence, *arousal];
                     let std = vec![1.0, 1.0];
                     let fq = 1;
                     let word_dict_value = SentimentDictValue {
-                        dict,
                         word,
                         stem: stemmed_word,
                         avg,
-                        std,
-                        fq
+                        std
                     };
-                    let dict = Dict::Custom;
                     let word = stem.clone();
                     let stem = stem;
                     let avg = vec![*valence, *arousal];
                     let std = vec![1.0, 1.0];
-                    let fq = 1;
                     let stem_dict_value = SentimentDictValue {
-                        dict,
                         word,
                         stem,
                         avg,
-                        std,
-                        fq
+                        std
                     };
                     self.custom_words.insert(term.to_string(), word_dict_value);
                     self.custom_stems.insert(term.to_string(), stem_dict_value);
@@ -637,19 +629,7 @@ impl SentimentModel {
     /// }
     /// ```
     pub fn add_term_with_replacement(&mut self, term: &'static str, valence: &f64, arousal: &f64) -> Result<(), Cow<'static, str>>{
-        if self.anew_words.contains_key(term) {
-            let dict_value = self.anew_words.get_mut(term).unwrap();
-            dict_value.avg[0] = *valence;
-            dict_value.avg[1] = *arousal;
-        } else if self.anew_stems.contains_key(term) {
-            let dict_value = self.anew_stems.get_mut(term).unwrap();
-            dict_value.avg[0] = *valence;
-            dict_value.avg[1] = *arousal;
-        } else if self.hapi_words.contains_key(term) {
-            let dict_value = self.hapi_words.get_mut(term).unwrap();
-            dict_value.avg[0] = *valence;
-            dict_value.avg[1] = *arousal;
-        } else if self.custom_words.contains_key(term) {
+        if self.custom_words.contains_key(term) {
             let dict_value = self.custom_words.get_mut(term).unwrap();
             dict_value.avg[0] = *valence;
             dict_value.avg[1] = *arousal;
@@ -661,33 +641,25 @@ impl SentimentModel {
             let stemmed_word = stem::get(term);
             match stemmed_word {
                 Ok(stem) => {
-                    let dict = Dict::Custom;
                     let word = term.to_string();
                     let stemmed_word = stem.clone();
                     let avg = vec![*valence, *arousal];
                     let std = vec![1.0, 1.0];
-                    let fq = 1;
                     let word_dict_value = SentimentDictValue {
-                        dict,
                         word,
                         stem: stemmed_word,
                         avg,
-                        std,
-                        fq
+                        std
                     };
-                    let dict = Dict::Custom;
                     let word = stem.clone();
                     let stem = stem;
                     let avg = vec![*valence, *arousal];
                     let std = vec![1.0, 1.0];
-                    let fq = 1;
                     let stem_dict_value = SentimentDictValue {
-                        dict,
                         word,
                         stem,
                         avg,
-                        std,
-                        fq
+                        std
                     };
                     self.custom_words.insert(term.to_string(), word_dict_value);
                     self.custom_stems.insert(term.to_string(), stem_dict_value);
@@ -705,45 +677,24 @@ impl SentimentModel {
 mod tests {
     use super::*;
 
-    #[test]
-    fn anew_words() {
-        let anew_words = get_anew_words();
-
-        let mut stemmed_word = "";
-        if let Some(sentiment_info) = anew_words.get("abduction") {
-            stemmed_word = &sentiment_info.stem;
-        };
-
-        assert_eq!(stemmed_word, "abduct");
+    struct Setup {
+        custom_words: CustomWords
     }
-
-    #[test]
-    fn anew_stems() {
-        let anew_stems = get_anew_stems();
-
-        let mut full_word = "";
-        if let Some(sentiment_info) = anew_stems.get("abduct") {
-            full_word = &sentiment_info.word;
-        };
-
-        assert_eq!(full_word, "abduction");
-    }
-
-    #[test]
-    fn hapi_words() {
-        let hapi_words = get_hapi_words();
-
-        let mut stemmed_word = "";
-        if let Some(sentiment_info) = hapi_words.get("laughs") {
-            stemmed_word = &sentiment_info.stem;
-        };
-
-        assert_eq!(stemmed_word, "laugh");
+    
+    impl Setup {
+        fn new() -> Self {
+            let custom_word_dict: &str = include_str!("../test_data/test.json");
+            let custom_words: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+            Setup {
+                custom_words
+            }
+        }
     }
 
     #[test]
     fn raw_arousal() {
-        let sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let sentiment = SentimentModel::new(setup.custom_words);
         let arousal = sentiment.get_raw_arousal("abduction");
         let correct_arousal = vec![5.53, 2.43];
 
@@ -752,7 +703,8 @@ mod tests {
 
     #[test]
     fn raw_valence() {
-        let sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let sentiment = SentimentModel::new(setup.custom_words);
         let valence = sentiment.get_raw_valence("abduction");
         let correct_valence = vec![2.76, 2.06];
 
@@ -761,7 +713,8 @@ mod tests {
 
     #[test]
     fn valence() {
-        let sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let sentiment = SentimentModel::new(setup.custom_words);
         let valence = sentiment.get_valence_for_single_term("abduction");
         let correct_valence = 2.76;
 
@@ -770,7 +723,8 @@ mod tests {
 
     #[test]
     fn arousal() {
-        let sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let sentiment = SentimentModel::new(setup.custom_words);
         let arousal = sentiment.get_arousal_for_single_term("abduction");
         let correct_arousal = 5.53;
 
@@ -779,7 +733,8 @@ mod tests {
     
     #[test]
     fn arousal_vector() {
-        let sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let sentiment = SentimentModel::new(setup.custom_words);
         let arousal = sentiment.get_arousal_for_term_vector(&vec!["I", "betrayed", "the", "bees"]);
         let correct_arousal = 6.881952380952381;
 
@@ -788,7 +743,8 @@ mod tests {
 
     #[test]
     fn valence_vector() {
-        let sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let sentiment = SentimentModel::new(setup.custom_words);
         let valence = sentiment.get_valence_for_term_vector(&vec!["I", "betrayed", "the", "bees"]);
         let correct_valence = 2.865615384615385;
 
@@ -797,7 +753,8 @@ mod tests {
 
     #[test]
     fn term_sentiment() {
-        let sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let sentiment = SentimentModel::new(setup.custom_words);
         let sentiment_info = sentiment.get_sentiment_for_term("abduction");
         let sentiment_map = HashMap::from([("valence", 2.76), ("arousal", 5.53)]);
 
@@ -806,7 +763,8 @@ mod tests {
 
     #[test]
     fn term_vector_sentiment() {
-        let sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let sentiment = SentimentModel::new(setup.custom_words);
         let sentiment_info = sentiment.get_sentiment_for_term_vector(&vec!["I", "betrayed", "the", "bees"]);
         let sentiment_map = HashMap::from([("valence", 2.865615384615385), ("arousal", 6.881952380952381)]);
 
@@ -815,7 +773,8 @@ mod tests {
 
     #[test]
     fn sentiment_description() {
-        let sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let sentiment = SentimentModel::new(setup.custom_words);
         let sentiment_description = sentiment.get_sentiment_description(&2.76, &5.53);
         let description = "upset";
 
@@ -824,7 +783,8 @@ mod tests {
 
     #[test]
     fn term_description() {
-        let sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let sentiment = SentimentModel::new(setup.custom_words);
         let sentiment_description = sentiment.get_term_description("abduction");
         let description = "upset";
 
@@ -833,7 +793,8 @@ mod tests {
 
     #[test]
     fn term_vector_description() {
-        let sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let sentiment = SentimentModel::new(setup.custom_words);
         let sentiment_description = sentiment.get_term_vector_description(&vec!["I", "betrayed", "the", "bees"]);
         let description = "stressed";
 
@@ -842,7 +803,8 @@ mod tests {
 
     #[test]
     fn replace_term() {
-        let mut sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let mut sentiment = SentimentModel::new(setup.custom_words);
         sentiment.add_term_with_replacement("abduction", &8.0, &8.5).unwrap();
         let sentiment_info = sentiment.get_sentiment_for_term("abduction");
         let sentiment_map = HashMap::from([("valence", 8.0), ("arousal", 8.5)]);
@@ -852,21 +814,24 @@ mod tests {
 
     #[test]
     fn non_ascii_error_replace_term() {
-        let mut sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let mut sentiment = SentimentModel::new(setup.custom_words);
         let add_sentiment_error = sentiment.add_term_with_replacement("hopè", &8.0, &8.5).unwrap_err();
         assert_eq!(add_sentiment_error, "Only supports English words with ASCII characters");
     }
 
     #[test]
     fn term_exists_error() {
-        let mut sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let mut sentiment = SentimentModel::new(setup.custom_words);
         let add_sentiment_error = sentiment.add_term_without_replacement("abduction", &8.0, &8.5).unwrap_err();
         assert_eq!(add_sentiment_error, "Term already exists");
     }
 
     #[test]
     fn add_term() {
-        let mut sentiment = SentimentModel::new();
+        let setup = Setup::new();
+        let mut sentiment = SentimentModel::new(setup.custom_words);
         sentiment.add_term_without_replacement("squanch", &2.0, &8.5).unwrap();
         let sentiment_info = sentiment.get_sentiment_for_term("squanch");
         let sentiment_map = HashMap::from([("valence", 2.0), ("arousal", 8.5)]);
