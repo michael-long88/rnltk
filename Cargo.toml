@@ -1,8 +1,12 @@
 [package]
 name = "rnltk"
 version = "0.1.0"
+authors = ["Michael Long <michael.d.long88@gmail.com>"]
 edition = "2021"
-include = ["/src", "test_data/"]
+license = "MIT"
+description = "Natural Language Toolkit for Rust"
+keywords = ["nlp", "language", "stemming", "sentiment"]
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,6 +14,3 @@ include = ["/src", "test_data/"]
 serde = { version = "1.0.145", features = ["derive"] }
 serde_json = "1.0.86"
 regex = "1.6.0"
-num = "0.4.0"
-ndarray = "0.15.6"
-smartcore = "0.2.1"
