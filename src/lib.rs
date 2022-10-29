@@ -27,6 +27,9 @@
 //! 
 //! For example, this code takes a JSON string and then creates a [`CustomWords`] type from that serialized data. The CustomWords
 //! type is then used to instantiate the [`SentimentModel`] struct.
+//! 
+//! [`CustomWords`]: ./sentiment.CustomWords.html
+//! [`SentimentModel`]: ./sentiment.SentimentModel.html
 //! ```
 //! use rnltk::sentiment::{SentimentModel, CustomWords};
 //! 
