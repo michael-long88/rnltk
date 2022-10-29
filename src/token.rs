@@ -1,3 +1,5 @@
+//! Module containing functions used to tokenize strings and get term frequencies.
+
 use std::collections::HashMap;
 
 use regex::Regex;

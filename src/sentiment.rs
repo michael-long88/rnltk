@@ -1,3 +1,5 @@
+//! Module containing types used to get valence and arousal sentiment scores.
+
 use std::{collections::HashMap, borrow::Cow};
 use std::f64::consts::PI;
 
@@ -694,7 +696,7 @@ impl SentimentModel {
     /// 
     /// # Errors
     /// 
-    /// If the term already exists, an error variant will be returned.
+    /// Returns [`RnltkError::SentimentTermExists`] if the term already exists
     ///
     /// # Examples
     ///
@@ -766,7 +768,7 @@ impl SentimentModel {
     ///
     /// # Errors
     /// 
-    /// In the event that the term being stemmed contains non-ASCII characters (like hopè), an error will be returned.
+    /// Returns [`RnltkError::StemNonAscii`] in the event that the term being stemmed contains non-ASCII characters (like hopè).
     /// 
     /// # Examples
     ///

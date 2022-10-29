@@ -1,8 +1,10 @@
+//! Module containing function used to stem strings.
+
 use std::str;
 use crate::error::RnltkError;
 
-/// Member b is a vector of bytes holding a word to be stemmed.
-/// The letters are in b[0], b[1] ... ending at b[z->k]. Member k is readjusted
+/// Member word is a vector of bytes holding a word to be stemmed.
+/// The letters are in word[0], word[1] ... ending at word[z->k]. Member k is readjusted
 /// downwards as the stemming progresses. Zero termination is not in fact used
 /// in the algorithm.
 ///
@@ -14,10 +16,15 @@ use crate::error::RnltkError;
 /// 
 ///```
 /// use rnltk::stem;
+/// # use rnltk::error::RnltkError;
 /// 
-/// let b = "pencils";
-/// let res = stem::get(b);
-/// assert_eq!(res, Ok("pencil".to_string()));
+/// # fn main() -> Result<(), RnltkError> {
+/// let word = "pencils";
+/// let stemmed_word = stem::get(word)?;
+/// assert_eq!(stemmed_word, "pencil".to_string());
+/// #
+/// #   Ok(())
+/// # }
 ///```
 struct Stemmer {
     bytes: Vec<u8>,
