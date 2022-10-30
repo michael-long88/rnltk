@@ -3,29 +3,6 @@
 use std::str;
 use crate::error::RnltkError;
 
-/// `word` is a vector of bytes holding a word to be stemmed.
-/// The letters are in word[0], word[1] ... ending at word[z->`bytes_length`]. `bytes_length` is readjusted
-/// downwards as the stemming progresses. Zero termination is not in fact used
-/// in the algorithm.
-///
-/// Note that only lower case sequences are stemmed. get(...) automatically
-/// lowercases the string before processing.
-///
-///
-/// Typical usage is:
-/// 
-///```
-/// use rnltk::stem;
-/// # use rnltk::error::RnltkError;
-/// 
-/// # fn main() -> Result<(), RnltkError> {
-/// let word = "pencils";
-/// let stemmed_word = stem::get(word)?;
-/// assert_eq!(stemmed_word, "pencil".to_string());
-/// #
-/// #   Ok(())
-/// # }
-///```
 struct Stemmer {
     bytes: Vec<u8>,
     bytes_length: usize,
@@ -533,6 +510,29 @@ impl Stemmer {
     }
 }
 
+/// `word` is a vector of bytes holding a word to be stemmed.
+/// The letters are in word[0], word[1] ... ending at word[z -> bytes length]. Bytes length is readjusted
+/// downwards as the stemming progresses. Zero termination is not in fact used
+/// in the algorithm.
+///
+/// Note that only lower case sequences are stemmed. get(...) automatically
+/// lowercases the string before processing.
+///
+///
+/// Typical usage is:
+/// 
+///```
+/// use rnltk::stem;
+/// # use rnltk::error::RnltkError;
+/// 
+/// # fn main() -> Result<(), RnltkError> {
+/// let word = "pencils";
+/// let stemmed_word = stem::get(word)?;
+/// assert_eq!(stemmed_word, "pencil".to_string());
+/// #
+/// #   Ok(())
+/// # }
+///```
 pub fn get(word: &str) -> Result<String, RnltkError> {
     if word.len() > 2 {
         let mut mw = Stemmer::new(word)?;
