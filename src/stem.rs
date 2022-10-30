@@ -3,29 +3,6 @@
 use std::str;
 use crate::error::RnltkError;
 
-/// Member word is a vector of bytes holding a word to be stemmed.
-/// The letters are in word[0], word[1] ... ending at word[z->k]. Member k is readjusted
-/// downwards as the stemming progresses. Zero termination is not in fact used
-/// in the algorithm.
-///
-/// Note that only lower case sequences are stemmed. get(...) automatically
-/// lowercases the string before processing.
-///
-///
-/// Typical usage is:
-/// 
-///```
-/// use rnltk::stem;
-/// # use rnltk::error::RnltkError;
-/// 
-/// # fn main() -> Result<(), RnltkError> {
-/// let word = "pencils";
-/// let stemmed_word = stem::get(word)?;
-/// assert_eq!(stemmed_word, "pencil".to_string());
-/// #
-/// #   Ok(())
-/// # }
-///```
 struct Stemmer {
     bytes: Vec<u8>,
     bytes_length: usize,
@@ -47,23 +24,23 @@ impl Stemmer {
         }
     }
 
-    /// stem.is_consonant(i) is true <=> stem[i] is a consonant
+    /// stem.is_consonant(index) is true <=> stem[index] is a consonant
     #[inline]
-    fn is_consonant(&self, i: usize) -> bool {
-        match self.bytes[i] {
+    fn is_consonant(&self, index: usize) -> bool {
+        match self.bytes[index] {
             b'a' | b'e' | b'i' | b'o' | b'u' => false,
             b'y' => {
-                if i == 0 {
+                if index == 0 {
                     true
                 } else {
-                    !self.is_consonant(i - 1)
+                    !self.is_consonant(index - 1)
                 }
             }
             _ => true,
         }
     }
 
-    /// stem.measure() measures the number of consonant sequences in [0, j).
+    /// stem.measure() measures the number of consonant sequences in [0, offset).
     /// if c is a consonant sequence and v a vowel sequence, and <..> indicates
     /// arbitrary presence,
     ///
@@ -76,64 +53,64 @@ impl Stemmer {
     /// ~~~
     fn measure(&self) -> usize {
         let mut n = 0;
-        let mut i = 0;
-        let j = self.offset;
+        let mut index = 0;
+        let offset = self.offset;
         loop {
-            if i >= j {
+            if index >= offset {
                 return n;
             }
-            if !self.is_consonant(i) {
+            if !self.is_consonant(index) {
                 break;
             }
-            i += 1;
+            index += 1;
         }
-        i += 1;
+        index += 1;
         loop {
             loop {
-                if i >= j {
+                if index >= offset {
                     return n;
                 }
-                if self.is_consonant(i) {
+                if self.is_consonant(index) {
                     break;
                 }
-                i += 1;
+                index += 1;
             }
-            i += 1;
+            index += 1;
             n += 1;
             loop {
-                if i >= j {
+                if index >= offset {
                     return n;
                 }
-                if !self.is_consonant(i) {
+                if !self.is_consonant(index) {
                     break;
                 }
-                i += 1;
+                index += 1;
             }
-            i += 1;
+            index += 1;
         }
     }
 
-    /// stem.has_vowel() is TRUE <=> [0, j-1) contains a vowel
+    /// stem.has_vowel() is TRUE <=> [0, offset-1) contains a vowel
     fn has_vowel(&self) -> bool {
-        for i in 0..self.offset {
-            if !self.is_consonant(i) {
+        for index in 0..self.offset {
+            if !self.is_consonant(index) {
                 return true;
             }
         }
         false
     }
 
-    /// stem.double_consonant(i) is TRUE <=> i,(i-1) contain a double consonant.
+    /// stem.double_consonant(index) is TRUE <=> index,(index-1) contain a double consonant.
     #[inline]
-    fn double_consonant(&self, i: usize) -> bool {
-        if i < 1 || self.bytes[i] != self.bytes[i - 1] {
+    fn double_consonant(&self, index: usize) -> bool {
+        if index < 1 || self.bytes[index] != self.bytes[index - 1] {
             false
         } else {
-            self.is_consonant(i)
+            self.is_consonant(index)
         }
     }
 
-    /// cvc(z, i) is TRUE <=> i-2,i-1,i has the form consonant - vowel - consonant
+    /// cvc(z, index) is TRUE <=> index-2,index-1,index has the form consonant - vowel - consonant
     /// and also if the second c is not w,x or y. this is used when trying to
     /// restore an e at the end of a short word. e.g.
     ///
@@ -141,30 +118,33 @@ impl Stemmer {
     ///    cav(e), lov(e), hop(e), crim(e), but
     ///    snow, box, tray.
     /// ~~~
-    fn cvc(&self, i: usize) -> bool {
-        if i < 2 || !self.is_consonant(i) || self.is_consonant(i - 1) || !self.is_consonant(i - 2) {
+    fn cvc(&self, index: usize) -> bool {
+        if index < 2 || !self.is_consonant(index) || self.is_consonant(index - 1) || !self.is_consonant(index - 2) {
             false
         } else {
-            !matches!(self.bytes[i], b'w' | b'x' | b'y')
+            !matches!(self.bytes[index], b'w' | b'x' | b'y')
         }
     }
 
-    /// stem.ends(s) is true <=> [0, k) ends with the string s.
+    /// stem.ends(s) is true <=> [0, bytes_length) ends with the string s.
     fn ends(&mut self, _s: &str) -> bool {
         let s = _s.as_bytes();
         let len = s.len();
         if len > self.bytes_length {
             false
-        } else if &self.bytes[self.bytes_length - len..self.bytes_length] == s {
-            self.offset = self.bytes_length - len;
-            true
-        } else {
-            false
+        } else { 
+            &self.bytes[self.bytes_length - len..self.bytes_length] == s 
         }
     }
 
-    /// stem.setto(s) sets [j,k) to the characters in the string s,
-    /// readjusting k.
+    fn update_offset(&mut self, _s: &str) {
+        let s = _s.as_bytes();
+        let len = s.len();
+        self.offset = self.bytes_length - len;
+    }
+
+    /// stem.setto(s) sets [offset, bytes_length) to the characters in the string s,
+    /// readjusting bytes_length.
     fn set_to(&mut self, s: &str) {
         let s = s.as_bytes();
         let len = s.len();
@@ -206,41 +186,57 @@ impl Stemmer {
     fn step1ab(&mut self) {
         if self.bytes[self.bytes_length - 1] == b's' {
             if self.ends("sses") {
+                self.update_offset("sses");
                 self.bytes_length -= 2;
             } else if self.ends("ies") {
+                self.update_offset("ies");
                 self.set_to("i");
             } else if self.bytes[self.bytes_length - 2] != b's' {
                 self.bytes_length -= 1;
             }
         }
         if self.ends("eed") {
+            self.update_offset("eed");
             if self.measure() > 0 {
                 self.bytes_length -= 1
             }
-        } else if (self.ends("ed") || self.ends("ing")) && self.has_vowel() {
-            self.bytes_length = self.offset;
-            if self.ends("at") {
-                self.set_to("ate");
-            } else if self.ends("bl") {
-                self.set_to("ble");
-            } else if self.ends("iz") {
-                self.set_to("ize");
-            } else if self.double_consonant(self.bytes_length - 1) {
-                self.bytes_length -= 1;
-                match self.bytes[self.bytes_length - 1] {
-                    b'l' | b's' | b'z' => self.bytes_length += 1,
-                    _ => (),
+        } else if self.ends("ed") || self.ends("ing") {
+            if self.ends("ed") {
+                self.update_offset("ed");
+            } else if self.ends("ing") {
+                self.update_offset("ing");
+            }
+            if self.has_vowel() {
+                self.bytes_length = self.offset;
+                if self.ends("at") {
+                    self.update_offset("at");
+                    self.set_to("ate");
+                } else if self.ends("bl") {
+                    self.update_offset("bl");
+                    self.set_to("ble");
+                } else if self.ends("iz") {
+                    self.update_offset("iz");
+                    self.set_to("ize");
+                } else if self.double_consonant(self.bytes_length - 1) {
+                    self.bytes_length -= 1;
+                    match self.bytes[self.bytes_length - 1] {
+                        b'l' | b's' | b'z' => self.bytes_length += 1,
+                        _ => (),
+                    }
+                } else if self.measure() == 1 && self.cvc(self.bytes_length - 1) {
+                    self.set_to("e");
                 }
-            } else if self.measure() == 1 && self.cvc(self.bytes_length - 1) {
-                self.set_to("e");
             }
         }
     }
 
     /// stem.step1c() turns terminal y to i when there is another vowel in the stem.
     fn step1c(&mut self) {
-        if self.ends("y") && self.has_vowel() {
-            self.bytes[self.bytes_length - 1] = b'i';
+        if self.ends("y") {
+            self.update_offset("y");
+            if self.has_vowel() {
+                self.bytes[self.bytes_length - 1] = b'i';
+            }
         }
     }
 
@@ -251,107 +247,94 @@ impl Stemmer {
         match self.bytes[self.bytes_length - 2] {
             b'a' => {
                 if self.ends("ational") {
+                    self.update_offset("ational");
                     self.replace("ate");
-                    return;
-                }
-                if self.ends("tional") {
+                } else if self.ends("tional") {
+                    self.update_offset("tional");
                     self.replace("tion");
-                    return;
                 }
             }
             b'c' => {
                 if self.ends("enci") {
+                    self.update_offset("enci");
                     self.replace("ence");
-                    return;
-                }
-                if self.ends("anci") {
+                } else if self.ends("anci") {
+                    self.update_offset("anci");
                     self.replace("ance");
-                    return;
                 }
             }
             b'e' => {
                 if self.ends("izer") {
+                    self.update_offset("izer");
                     self.replace("ize");
-                    return;
                 }
             }
             b'l' => {
                 if self.ends("bli") {
+                    self.update_offset("bli");
                     self.replace("ble");
-                    return;
                 } /*-DEPARTURE-*/
 
                 /* To match the published algorithm, replace this line with
                 'l' => {
                     if self.ends("abli") { self.replace("able"); return } */
-
-                if self.ends("alli") {
+                else if self.ends("alli") {
+                    self.update_offset("alli");
                     self.replace("al");
-                    return;
-                }
-                if self.ends("entli") {
+                } else if self.ends("entli") {
+                    self.update_offset("entli");
                     self.replace("ent");
-                    return;
-                }
-                if self.ends("eli") {
+                } else if self.ends("eli") {
+                    self.update_offset("eli");
                     self.replace("e");
-                    return;
-                }
-                if self.ends("ousli") {
+                } else if self.ends("ousli") {
+                    self.update_offset("ousli");
                     self.replace("ous");
-                    return;
                 }
             }
             b'o' => {
                 if self.ends("ization") {
+                    self.update_offset("ization");
                     self.replace("ize");
-                    return;
-                }
-                if self.ends("ation") {
+                } else if self.ends("ation") {
+                    self.update_offset("ation");
                     self.replace("ate");
-                    return;
-                }
-                if self.ends("ator") {
+                } else if self.ends("ator") {
+                    self.update_offset("ator");
                     self.replace("ate");
-                    return;
                 }
             }
             b's' => {
                 if self.ends("alism") {
+                    self.update_offset("alism");
                     self.replace("al");
-                    return;
-                }
-                if self.ends("iveness") {
+                } else if self.ends("iveness") {
+                    self.update_offset("iveness");
                     self.replace("ive");
-                    return;
-                }
-                if self.ends("fulness") {
+                } else if self.ends("fulness") {
+                    self.update_offset("fulness");
                     self.replace("ful");
-                    return;
-                }
-                if self.ends("ousness") {
+                } else if self.ends("ousness") {
+                    self.update_offset("ousness");
                     self.replace("ous");
-                    return;
                 }
             }
             b't' => {
                 if self.ends("aliti") {
+                    self.update_offset("aliti");
                     self.replace("al");
-                    return;
-                }
-                if self.ends("iviti") {
+                } else if self.ends("iviti") {
+                    self.update_offset("iviti");
                     self.replace("ive");
-                    return;
-                }
-                if self.ends("biliti") {
+                } else if self.ends("biliti") {
+                    self.update_offset("biliti");
                     self.replace("ble");
-                    return;
                 }
             }
             b'g' => {
                 if self.ends("logi") {
+                    self.update_offset("logi");
                     self.replace("log");
-                    return;
                 }
             } /*-DEPARTURE-*/
             /* To match the published algorithm, delete this line */
@@ -364,38 +347,35 @@ impl Stemmer {
         match self.bytes[self.bytes_length - 1] {
             b'e' => {
                 if self.ends("icate") {
+                    self.update_offset("icate");
                     self.replace("ic");
-                    return;
-                }
-                if self.ends("ative") {
+                } else if self.ends("ative") {
+                    self.update_offset("ative");
                     self.replace("");
-                    return;
-                }
-                if self.ends("alize") {
+                } else if self.ends("alize") {
+                    self.update_offset("alize");
                     self.replace("al");
-                    return;
                 }
             }
             b'i' => {
                 if self.ends("iciti") {
+                    self.update_offset("iciti");
                     self.replace("ic");
-                    return;
                 }
             }
             b'l' => {
                 if self.ends("ical") {
+                    self.update_offset("ical");
                     self.replace("ic");
-                    return;
-                }
-                if self.ends("ful") {
+                } else if self.ends("ful") {
+                    self.update_offset("ful");
                     self.replace("");
-                    return;
                 }
             }
             b's' => {
                 if self.ends("ness") {
+                    self.update_offset("ness");
                     self.replace("");
-                    return;
                 }
             }
             _ => (),
@@ -404,83 +384,107 @@ impl Stemmer {
 
     /// stem.step4() takes off -ant, -ence etc., in context <c>vcvc<v>.
     fn step4(&mut self) {
+        let mut byte_was_matched = false;
         match self.bytes[self.bytes_length - 2] {
             b'a' => {
                 if self.ends("al") {
-                } else {
-                    return;
+                    self.update_offset("al");
+                    byte_was_matched = true;
                 }
             }
             b'c' => {
-                if self.ends("ance") || self.ends("ence") {
-                } else {
-                    return;
+                if self.ends("ance") {
+                    self.update_offset("ance");
+                    byte_was_matched = true;
+                } else if self.ends("ence") {
+                    self.update_offset("ence");
+                    byte_was_matched = true;
                 }
             }
             b'e' => {
                 if self.ends("er") {
-                } else {
-                    return;
+                    self.update_offset("er");
+                    byte_was_matched = true;
                 }
             }
             b'i' => {
                 if self.ends("ic") {
-                } else {
-                    return;
+                    self.update_offset("ic");
+                    byte_was_matched = true;
                 }
             }
             b'l' => {
-                if self.ends("able") || self.ends("ible") {
-                } else {
-                    return;
+                if self.ends("able") {
+                    self.update_offset("able");
+                    byte_was_matched = true;
+                } else if self.ends("ible") {
+                    self.update_offset("ible");
+                    byte_was_matched = true;
                 }
             }
             b'n' => {
-                if self.ends("ant") || self.ends("ement") || self.ends("ment") || self.ends("ent") {
-                } else {
-                    return;
+                if self.ends("ant") {
+                    self.update_offset("ant");
+                    byte_was_matched = true;
+                } else if self.ends("ement") {
+                    self.update_offset("ement");
+                    byte_was_matched = true;
+                } else if self.ends("ment") {
+                    self.update_offset("ment");
+                    byte_was_matched = true;
+                } else if self.ends("ent") {
+                    self.update_offset("ent");
+                    byte_was_matched = true;
                 }
             }
             b'o' => {
-                if self.ends("ion") && (self.bytes[self.offset - 1] == b's' || self.bytes[self.offset - 1] == b't') || self.ends("ou") {
-                } else {
-                    return;
+                if self.ends("ion") {
+                    self.update_offset("ion");
+                    if self.offset > 0 && (self.bytes[self.offset - 1] == b's' || self.bytes[self.offset - 1] == b't') {
+                        byte_was_matched = true;
+                    }
+                } else if self.ends("ou") {
+                    self.update_offset("ou");
+                    byte_was_matched = true;
                 }
                 /* takes care of -ous */
             }
             b's' => {
                 if self.ends("ism") {
-                } else {
-                    return;
+                    self.update_offset("ism");
+                    byte_was_matched = true;
                 }
             }
             b't' => {
-                if self.ends("ate") || self.ends("iti") {
-                } else {
-                    return;
+                if self.ends("ate") {
+                    self.update_offset("ate");
+                    byte_was_matched = true;
+                } else if self.ends("iti") {
+                    self.update_offset("iti");
+                    byte_was_matched = true;
                 }
             }
             b'u' => {
                 if self.ends("ous") {
-                } else {
-                    return;
+                    self.update_offset("ous");
+                    byte_was_matched = true;
                 }
             }
             b'v' => {
                 if self.ends("ive") {
-                } else {
-                    return;
+                    self.update_offset("ive");
+                    byte_was_matched = true;
                 }
             }
             b'z' => {
                 if self.ends("ize") {
-                } else {
-                    return;
+                    self.update_offset("ize");
+                    byte_was_matched = true;
                 }
             }
             _ => return,
         }
-        if self.measure() > 1 {
+        if byte_was_matched && self.measure() > 1 {
             self.bytes_length = self.offset
         }
     }
@@ -506,6 +510,29 @@ impl Stemmer {
     }
 }
 
+/// `word` is a vector of bytes holding a word to be stemmed.
+/// The letters are in word[0], word[1] ... ending at word[z -> bytes length]. Bytes length is readjusted
+/// downwards as the stemming progresses. Zero termination is not in fact used
+/// in the algorithm.
+///
+/// Note that only lower case sequences are stemmed. get(...) automatically
+/// lowercases the string before processing.
+///
+///
+/// Typical usage is:
+/// 
+///```
+/// use rnltk::stem;
+/// # use rnltk::error::RnltkError;
+/// 
+/// # fn main() -> Result<(), RnltkError> {
+/// let word = "pencils";
+/// let stemmed_word = stem::get(word)?;
+/// assert_eq!(stemmed_word, "pencil".to_string());
+/// #
+/// #   Ok(())
+/// # }
+///```
 pub fn get(word: &str) -> Result<String, RnltkError> {
     if word.len() > 2 {
         let mut mw = Stemmer::new(word)?;
