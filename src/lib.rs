@@ -22,7 +22,7 @@
 //! the sentiment analysis is based on arousal and valence levels.
 //! 
 //! \* For anyone interested in a sentiment lexicon for non-commercial use, please check out the work of 
-//! [Warriner et al](https://link.springer.com/article/10.3758/s13428-012-0314-x) for an expanded ANEW lexicon. The
+//! [Warriner et al., 2013](https://link.springer.com/article/10.3758/s13428-012-0314-x) for an expanded ANEW lexicon. The
 //! data can be found in the "Electronic supplementary material" section of the paper. 
 //! 
 //! For example, this code takes a JSON string and then creates a [`CustomWords`] type from that serialized data. The CustomWords
@@ -47,6 +47,8 @@
 //! 
 //! let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
 //! ```
+//! 
+//! Checkout the examples folder in the github project repository for a more comprehensive example.
 //! 
 
 pub mod token;
