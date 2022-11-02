@@ -11,19 +11,34 @@ use crate::error::RnltkError;
 pub type CustomWords = HashMap<String, SentimentDictValue>;
 pub type CustomStems = HashMap<String, SentimentDictValue>;
 
+#[derive(Debug, PartialEq)]
+pub struct RawSentiment {
+    pub average: f64,
+    pub standard_deviation: f64
+}
+
+impl RawSentiment {
+    fn new(average: f64, standard_deviation: f64) -> Self {
+        RawSentiment {
+            average,
+            standard_deviation
+        }
+    }
+}
+
 /// Struct for creating the basis of the sentiment lexicon.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SentimentDictValue {
     /// The full, unstemmed word
-    word: String,
+    pub word: String,
     /// The stemmed version of the word
-    stem: String,
+    pub stem: String,
     /// The average values of valence and arousal
     /// Expected format of vec![5.0, 5.0]
-    avg: Vec<f64>,
+    pub avg: Vec<f64>,
     /// The standard deviation values of valence and arousal
     /// Expected format of vec![5.0, 5.0]
-    std: Vec<f64>
+    pub std: Vec<f64>
 }
 
 impl SentimentDictValue {
@@ -180,14 +195,14 @@ impl SentimentModel {
     /// let arousal = sentiment.get_raw_arousal("abduction");
     /// let correct_arousal = vec![5.53, 2.43];
     /// 
-    /// assert_eq!(arousal, correct_arousal);
+    /// assert_eq!(vec![arousal.average, arousal.standard_deviation], correct_arousal);
     /// ```
-    pub fn get_raw_arousal(&self, term: &str) -> Vec<f64> {
+    pub fn get_raw_arousal(&self, term: &str) -> RawSentiment {
         let mut average = 0.0;
         let mut std_dev = 0.0; 
 
         if !self.does_term_exist(term) {
-            return vec![average, std_dev];
+            return RawSentiment::new(average, std_dev);
         } else if self.custom_words.contains_key(term) {
             let sentiment_info = self.custom_words.get(term).unwrap();
             average = sentiment_info.avg[1];
@@ -197,7 +212,7 @@ impl SentimentModel {
             average = sentiment_info.avg[1];
             std_dev = sentiment_info.std[1];
         }
-        vec![average, std_dev]
+        RawSentiment::new(average, std_dev)
     }
 
     /// Gets the raw valence values (average, standard deviation) for a given term
@@ -226,14 +241,14 @@ impl SentimentModel {
     /// let valence = sentiment.get_raw_valence("abduction");
     /// let correct_valence = vec![2.76, 2.06];
     /// 
-    /// assert_eq!(valence, correct_valence);
+    /// assert_eq!(vec![valence.average, valence.standard_deviation], correct_valence);
     /// ```
-    pub fn get_raw_valence(&self, term: &str) -> Vec<f64> {
+    pub fn get_raw_valence(&self, term: &str) -> RawSentiment {
         let mut average = 0.0;
         let mut std_dev = 0.0; 
 
         if !self.does_term_exist(term) {
-            return vec![average, std_dev];
+            return RawSentiment::new(average, std_dev);
         } else if self.custom_words.contains_key(term) {
             let sentiment_info = self.custom_words.get(term).unwrap();
             average = sentiment_info.avg[0];
@@ -243,7 +258,7 @@ impl SentimentModel {
             average = sentiment_info.avg[0];
             std_dev = sentiment_info.std[0];
         }
-        vec![average, std_dev]
+        RawSentiment::new(average, std_dev)
     }
 
     /// Gets the arousal value for a given term
@@ -275,7 +290,7 @@ impl SentimentModel {
     /// assert_eq!(arousal, correct_arousal);
     /// ```
     pub fn get_arousal_for_single_term(&self, term: &str) -> f64 {
-        self.get_raw_arousal(term)[0]
+        self.get_raw_arousal(term).average
     }
 
     /// Gets the valence value for a given term
@@ -307,7 +322,7 @@ impl SentimentModel {
     /// assert_eq!(valence, correct_valence);
     /// ```
     pub fn get_valence_for_single_term(&self, term: &str) -> f64 {
-        self.get_raw_valence(term)[0]
+        self.get_raw_valence(term).average
     }
 
     /// Gets the arousal value for a given vector of terms
@@ -354,11 +369,11 @@ impl SentimentModel {
             if self.does_term_exist(term) {
                 let raw_arousal = self.get_raw_arousal(term);
                 
-                let p = 1.0 / (c * raw_arousal[1].powi(2)).sqrt();
+                let p = 1.0 / (c * raw_arousal.standard_deviation.powi(2)).sqrt();
                 prob.push(p);
                 prob_sum += p;
 
-                arousal_means.push(raw_arousal[0]);
+                arousal_means.push(raw_arousal.average);
             }
         }
         let mut arousal = 0.0;
@@ -413,11 +428,11 @@ impl SentimentModel {
             if self.does_term_exist(term) {
                 let raw_valence = self.get_raw_valence(term);
                 
-                let p = 1.0 / (c * raw_valence[1].powi(2)).sqrt();
+                let p = 1.0 / (c * raw_valence.standard_deviation.powi(2)).sqrt();
                 prob.push(p);
                 prob_sum += p;
 
-                valence_means.push(raw_valence[0]);
+                valence_means.push(raw_valence.average);
             }
         }
         let mut valence = 0.0;
@@ -858,9 +873,9 @@ mod tests {
         let setup = Setup::new();
         let sentiment = SentimentModel::new(setup.custom_words);
         let arousal = sentiment.get_raw_arousal("abduction");
-        let correct_arousal = vec![5.53, 2.43];
+        let raw_sentiment = RawSentiment::new(5.53, 2.43);
 
-        assert_eq!(arousal, correct_arousal);
+        assert_eq!(arousal, raw_sentiment);
     }
 
     #[test]
@@ -868,9 +883,9 @@ mod tests {
         let setup = Setup::new();
         let sentiment = SentimentModel::new(setup.custom_words);
         let valence = sentiment.get_raw_valence("abduction");
-        let correct_valence = vec![2.76, 2.06];
+        let raw_sentiment = RawSentiment::new(2.76, 2.06);
 
-        assert_eq!(valence, correct_valence);
+        assert_eq!(valence, raw_sentiment);
     }
 
     #[test]
