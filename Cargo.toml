@@ -7,6 +7,9 @@ license = "MIT"
 description = "Natural Language Toolkit for Rust"
 keywords = ["nlp", "language", "stemming", "sentiment"]
 readme = "README.md"
+documentation = "https://docs.rs/rnltk"
+repository = "https://github.com/michael-long88/rnltk/"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
