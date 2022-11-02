@@ -105,17 +105,9 @@ impl SentimentModel {
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords, CustomStems};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = r#"
-    /// {
-    ///     "abduction": {
-    ///         "word": "abduction",
-    ///         "stem": "abduct",
-    ///         "avg": [2.76, 5.53],
-    ///         "std": [2.06, 2.43]
-    ///     }
-    /// }"#;
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let custom_stem_dict = r#"
     /// {
@@ -148,17 +140,9 @@ impl SentimentModel {
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = r#"
-    /// {
-    ///     "abduction": {
-    ///         "word": "abduction",
-    ///         "stem": "abduct",
-    ///         "avg": [2.76, 5.53],
-    ///         "std": [2.06, 2.43]
-    ///     }
-    /// }"#;
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// if sentiment.does_term_exist("abduction") {
@@ -179,17 +163,9 @@ impl SentimentModel {
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = r#"
-    /// {
-    ///     "abduction": {
-    ///         "word": "abduction",
-    ///         "stem": "abduct",
-    ///         "avg": [2.76, 5.53],
-    ///         "std": [2.06, 2.43]
-    ///     }
-    /// }"#;
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let arousal = sentiment.get_raw_arousal("abduction");
@@ -225,17 +201,9 @@ impl SentimentModel {
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = r#"
-    /// {
-    ///     "abduction": {
-    ///         "word": "abduction",
-    ///         "stem": "abduct",
-    ///         "avg": [2.76, 5.53],
-    ///         "std": [2.06, 2.43]
-    ///     }
-    /// }"#;
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let valence = sentiment.get_raw_valence("abduction");
@@ -271,17 +239,9 @@ impl SentimentModel {
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = r#"
-    /// {
-    ///     "abduction": {
-    ///         "word": "abduction",
-    ///         "stem": "abduct",
-    ///         "avg": [2.76, 5.53],
-    ///         "std": [2.06, 2.43]
-    ///     }
-    /// }"#;
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let arousal = sentiment.get_arousal_for_single_term("abduction");
@@ -303,17 +263,9 @@ impl SentimentModel {
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = r#"
-    /// {
-    ///     "abduction": {
-    ///         "word": "abduction",
-    ///         "stem": "abduct",
-    ///         "avg": [2.76, 5.53],
-    ///         "std": [2.06, 2.43]
-    ///     }
-    /// }"#;
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let valence = sentiment.get_valence_for_single_term("abduction");
@@ -454,17 +406,9 @@ impl SentimentModel {
     /// ```
     /// use std::collections::HashMap;
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = r#"
-    /// {
-    ///     "abduction": {
-    ///         "word": "abduction",
-    ///         "stem": "abduct",
-    ///         "avg": [2.76, 5.53],
-    ///         "std": [2.06, 2.43]
-    ///     }
-    /// }"#;
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let sentiment_info = sentiment.get_sentiment_for_term("abduction");
@@ -534,17 +478,9 @@ impl SentimentModel {
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = r#"
-    /// {
-    ///     "abduction": {
-    ///         "word": "abduction",
-    ///         "stem": "abduct",
-    ///         "avg": [2.76, 5.53],
-    ///         "std": [2.06, 2.43]
-    ///     }
-    /// }"#;
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let sentiment_description = sentiment.get_sentiment_description(&2.76, &5.53);
@@ -632,17 +568,9 @@ impl SentimentModel {
     /// ```
     /// use std::collections::HashMap;
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = r#"
-    /// {
-    ///     "abduction": {
-    ///         "word": "abduction",
-    ///         "stem": "abduct",
-    ///         "avg": [2.76, 5.53],
-    ///         "std": [2.06, 2.43]
-    ///     }
-    /// }"#;
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let sentiment_description = sentiment.get_term_description("abduction");
@@ -719,17 +647,9 @@ impl SentimentModel {
     /// use std::collections::HashMap;
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
     /// use rnltk::error::RnltkError;
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = r#"
-    /// {
-    ///     "abduction": {
-    ///         "word": "abduction",
-    ///         "stem": "abduct",
-    ///         "avg": [2.76, 5.53],
-    ///         "std": [2.06, 2.43]
-    ///     }
-    /// }"#;
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let mut sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let sentiment_return_value = sentiment.add_term_without_replacement("squanch", &2.0, &8.5);
@@ -791,17 +711,9 @@ impl SentimentModel {
     /// use std::collections::HashMap;
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
     /// use rnltk::error::RnltkError;
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = r#"
-    /// {
-    ///     "abduction": {
-    ///         "word": "abduction",
-    ///         "stem": "abduct",
-    ///         "avg": [2.76, 5.53],
-    ///         "std": [2.06, 2.43]
-    ///     }
-    /// }"#;
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let mut sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let sentiment_return_value = sentiment.add_term_with_replacement("abduction", &8.0, &8.5);
