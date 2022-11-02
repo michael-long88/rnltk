@@ -11,19 +11,36 @@ use crate::error::RnltkError;
 pub type CustomWords = HashMap<String, SentimentDictValue>;
 pub type CustomStems = HashMap<String, SentimentDictValue>;
 
+/// Struct for holding raw arousal and sentiment values for
+/// `average` and `standard_deviation`.
+#[derive(Debug, PartialEq)]
+pub struct RawSentiment {
+    pub average: f64,
+    pub standard_deviation: f64
+}
+
+impl RawSentiment {
+    fn new(average: f64, standard_deviation: f64) -> Self {
+        RawSentiment {
+            average,
+            standard_deviation
+        }
+    }
+}
+
 /// Struct for creating the basis of the sentiment lexicon.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SentimentDictValue {
     /// The full, unstemmed word
-    word: String,
+    pub word: String,
     /// The stemmed version of the word
-    stem: String,
+    pub stem: String,
     /// The average values of valence and arousal
     /// Expected format of vec![5.0, 5.0]
-    avg: Vec<f64>,
+    pub avg: Vec<f64>,
     /// The standard deviation values of valence and arousal
     /// Expected format of vec![5.0, 5.0]
-    std: Vec<f64>
+    pub std: Vec<f64>
 }
 
 impl SentimentDictValue {
@@ -43,26 +60,23 @@ pub struct SentimentModel {
 }
 
 impl SentimentModel {
-    /// Creates new instance of SentimentModel
-    /// 
-    /// # Arguments
-    /// 
-    /// * `custom_words` - CustomWords representation of sentiment lexicon
+    /// Creates new instance of SentimentModel from `custom_words`, a [`CustomWords`]
+    /// sentiment lexicon.
     ///
     /// # Examples
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
     /// 
-    /// let custom_word_dict = "
+    /// let custom_word_dict = r#"
     /// {
-    ///     \"abduction\": {
-    ///         \"word\": \"abduction\",
-    ///         \"stem\": \"abduct\",
-    ///         \"avg\": [2.76, 5.53],
-    ///         \"std\": [2.06, 2.43]
+    ///     "abduction": {
+    ///         "word": "abduction",
+    ///         "stem": "abduct",
+    ///         "avg": [2.76, 5.53],
+    ///         "std": [2.06, 2.43]
     ///     }
-    /// }";
+    /// }"#;
     /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
@@ -80,37 +94,25 @@ impl SentimentModel {
         }
     }
 
-    /// Adds new lexicon of stemmed words
-    /// 
-    /// # Arguments
-    /// 
-    /// * `custom_stems` - CustomStems representation of sentiment lexicon
+    /// Adds new `custom_stems` lexicon of stemmed words.
     ///
     /// # Examples
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords, CustomStems};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = "
-    /// {
-    ///     \"abduction\": {
-    ///         \"word\": \"abduction\",
-    ///         \"stem\": \"abduct\",
-    ///         \"avg\": [2.76, 5.53],
-    ///         \"std\": [2.06, 2.43]
-    ///     }
-    /// }";
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
-    /// let custom_stem_dict = "
+    /// let custom_stem_dict = r#"
     /// {
-    ///     \"abduct\": {
-    ///         \"word\": \"abduction\",
-    ///         \"stem\": \"abduct\",
-    ///         \"avg\": [2.76, 5.53],
-    ///         \"std\": [2.06, 2.43]
+    ///     "abduct": {
+    ///         "word": "abduction",
+    ///         "stem": "abduct",
+    ///         "avg": [2.76, 5.53],
+    ///         "std": [2.06, 2.43]
     ///     }
-    /// }";
+    /// }"#;
     /// let custom_stems_sentiment_hashmap: CustomStems = serde_json::from_str(custom_stem_dict).unwrap();
     /// 
     /// let mut sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
@@ -123,27 +125,15 @@ impl SentimentModel {
         self.custom_stems = custom_stems        
     }
 
-    /// Checks if a term exists in the sentiment dictionaries
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token 
+    /// Checks if a `term` exists in the sentiment dictionaries.
     ///
     /// # Examples
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = "
-    /// {
-    ///     \"abduction\": {
-    ///         \"word\": \"abduction\",
-    ///         \"stem\": \"abduct\",
-    ///         \"avg\": [2.76, 5.53],
-    ///         \"std\": [2.06, 2.43]
-    ///     }
-    /// }";
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// if sentiment.does_term_exist("abduction") {
@@ -154,40 +144,28 @@ impl SentimentModel {
         self.custom_words.contains_key(term) || self.custom_stems.contains_key(term)
     }
 
-    /// Gets the raw arousal values (average, standard deviation) for a given term
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token 
+    /// Gets the raw arousal values ([`RawSentiment`]) for a given `term` word token.
     ///
     /// # Examples
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = "
-    /// {
-    ///     \"abduction\": {
-    ///         \"word\": \"abduction\",
-    ///         \"stem\": \"abduct\",
-    ///         \"avg\": [2.76, 5.53],
-    ///         \"std\": [2.06, 2.43]
-    ///     }
-    /// }";
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let arousal = sentiment.get_raw_arousal("abduction");
     /// let correct_arousal = vec![5.53, 2.43];
     /// 
-    /// assert_eq!(arousal, correct_arousal);
+    /// assert_eq!(vec![arousal.average, arousal.standard_deviation], correct_arousal);
     /// ```
-    pub fn get_raw_arousal(&self, term: &str) -> Vec<f64> {
+    pub fn get_raw_arousal(&self, term: &str) -> RawSentiment {
         let mut average = 0.0;
         let mut std_dev = 0.0; 
 
         if !self.does_term_exist(term) {
-            return vec![average, std_dev];
+            return RawSentiment::new(average, std_dev);
         } else if self.custom_words.contains_key(term) {
             let sentiment_info = self.custom_words.get(term).unwrap();
             average = sentiment_info.avg[1];
@@ -197,43 +175,31 @@ impl SentimentModel {
             average = sentiment_info.avg[1];
             std_dev = sentiment_info.std[1];
         }
-        vec![average, std_dev]
+        RawSentiment::new(average, std_dev)
     }
 
-    /// Gets the raw valence values (average, standard deviation) for a given term
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token 
+    /// Gets the raw valence values ([`RawSentiment`]) for a given `term` word token.
     ///
     /// # Examples
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = "
-    /// {
-    ///     \"abduction\": {
-    ///         \"word\": \"abduction\",
-    ///         \"stem\": \"abduct\",
-    ///         \"avg\": [2.76, 5.53],
-    ///         \"std\": [2.06, 2.43]
-    ///     }
-    /// }";
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let valence = sentiment.get_raw_valence("abduction");
     /// let correct_valence = vec![2.76, 2.06];
     /// 
-    /// assert_eq!(valence, correct_valence);
+    /// assert_eq!(vec![valence.average, valence.standard_deviation], correct_valence);
     /// ```
-    pub fn get_raw_valence(&self, term: &str) -> Vec<f64> {
+    pub fn get_raw_valence(&self, term: &str) -> RawSentiment {
         let mut average = 0.0;
         let mut std_dev = 0.0; 
 
         if !self.does_term_exist(term) {
-            return vec![average, std_dev];
+            return RawSentiment::new(average, std_dev);
         } else if self.custom_words.contains_key(term) {
             let sentiment_info = self.custom_words.get(term).unwrap();
             average = sentiment_info.avg[0];
@@ -243,30 +209,18 @@ impl SentimentModel {
             average = sentiment_info.avg[0];
             std_dev = sentiment_info.std[0];
         }
-        vec![average, std_dev]
+        RawSentiment::new(average, std_dev)
     }
 
-    /// Gets the arousal value for a given term
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token 
+    /// Gets the arousal value for a given `term` word token.
     ///
     /// # Examples
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = "
-    /// {
-    ///     \"abduction\": {
-    ///         \"word\": \"abduction\",
-    ///         \"stem\": \"abduct\",
-    ///         \"avg\": [2.76, 5.53],
-    ///         \"std\": [2.06, 2.43]
-    ///     }
-    /// }";
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let arousal = sentiment.get_arousal_for_single_term("abduction");
@@ -275,30 +229,18 @@ impl SentimentModel {
     /// assert_eq!(arousal, correct_arousal);
     /// ```
     pub fn get_arousal_for_single_term(&self, term: &str) -> f64 {
-        self.get_raw_arousal(term)[0]
+        self.get_raw_arousal(term).average
     }
 
-    /// Gets the valence value for a given term
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token 
+    /// Gets the valence value for a given `term` word token.
     ///
     /// # Examples
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = "
-    /// {
-    ///     \"abduction\": {
-    ///         \"word\": \"abduction\",
-    ///         \"stem\": \"abduct\",
-    ///         \"avg\": [2.76, 5.53],
-    ///         \"std\": [2.06, 2.43]
-    ///     }
-    /// }";
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let valence = sentiment.get_valence_for_single_term("abduction");
@@ -307,35 +249,31 @@ impl SentimentModel {
     /// assert_eq!(valence, correct_valence);
     /// ```
     pub fn get_valence_for_single_term(&self, term: &str) -> f64 {
-        self.get_raw_valence(term)[0]
+        self.get_raw_valence(term).average
     }
 
-    /// Gets the arousal value for a given vector of terms
-    /// 
-    /// # Arguments
-    /// 
-    /// * `terms` - &Vec<&str> representation of the word tokens
+    /// Gets the arousal value for a word token vector of `terms`.
     ///
     /// # Examples
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
     /// 
-    /// let custom_word_dict = "
+    /// let custom_word_dict = r#"
     /// {
-    ///     \"betrayed\": {
-    ///         \"word\": \"betrayed\",
-    ///         \"stem\": \"betrai\",
-    ///         \"avg\": [2.57, 7.24],
-    ///         \"std\": [1.83, 2.06]
+    ///     "betrayed": {
+    ///         "word": "betrayed",
+    ///         "stem": "betrai",
+    ///         "avg": [2.57, 7.24],
+    ///         "std": [1.83, 2.06]
     ///     },
-    ///     \"bees\": {
-    ///         \"word\": \"bees\",
-    ///         \"stem\": \"bee\",
-    ///         \"avg\": [3.2, 6.51],
-    ///         \"std\": [2.07, 2.14]
+    ///     "bees": {
+    ///         "word": "bees",
+    ///         "stem": "bee",
+    ///         "avg": [3.2, 6.51],
+    ///         "std": [2.07, 2.14]
     ///     }
-    /// }";
+    /// }"#;
     /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
@@ -354,11 +292,11 @@ impl SentimentModel {
             if self.does_term_exist(term) {
                 let raw_arousal = self.get_raw_arousal(term);
                 
-                let p = 1.0 / (c * raw_arousal[1].powi(2)).sqrt();
+                let p = 1.0 / (c * raw_arousal.standard_deviation.powi(2)).sqrt();
                 prob.push(p);
                 prob_sum += p;
 
-                arousal_means.push(raw_arousal[0]);
+                arousal_means.push(raw_arousal.average);
             }
         }
         let mut arousal = 0.0;
@@ -369,32 +307,28 @@ impl SentimentModel {
         arousal
     }
 
-    /// Gets the valence value for a given vector of terms
-    /// 
-    /// # Arguments
-    /// 
-    /// * `terms` - &Vec<&str> representation of the word tokens
+    /// Gets the valence value for a word token vector of `terms`.
     ///
     /// # Examples
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
     /// 
-    /// let custom_word_dict = "
+    /// let custom_word_dict = r#"
     /// {
-    ///     \"betrayed\": {
-    ///         \"word\": \"betrayed\",
-    ///         \"stem\": \"betrai\",
-    ///         \"avg\": [2.57, 7.24],
-    ///         \"std\": [1.83, 2.06]
+    ///     "betrayed": {
+    ///         "word": "betrayed",
+    ///         "stem": "betrai",
+    ///         "avg": [2.57, 7.24],
+    ///         "std": [1.83, 2.06]
     ///     },
-    ///     \"bees\": {
-    ///         \"word\": \"bees\",
-    ///         \"stem\": \"bee\",
-    ///         \"avg\": [3.2, 6.51],
-    ///         \"std\": [2.07, 2.14]
+    ///     "bees": {
+    ///         "word": "bees",
+    ///         "stem": "bee",
+    ///         "avg": [3.2, 6.51],
+    ///         "std": [2.07, 2.14]
     ///     }
-    /// }";
+    /// }"#;
     /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
@@ -413,11 +347,11 @@ impl SentimentModel {
             if self.does_term_exist(term) {
                 let raw_valence = self.get_raw_valence(term);
                 
-                let p = 1.0 / (c * raw_valence[1].powi(2)).sqrt();
+                let p = 1.0 / (c * raw_valence.standard_deviation.powi(2)).sqrt();
                 prob.push(p);
                 prob_sum += p;
 
-                valence_means.push(raw_valence[0]);
+                valence_means.push(raw_valence.average);
             }
         }
         let mut valence = 0.0;
@@ -428,28 +362,16 @@ impl SentimentModel {
         valence
     }
 
-    /// Gets the valence, arousal sentiment for a term
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token
+    /// Gets the valence, arousal sentiment for a `term` word token.
     ///
     /// # Examples
     ///
     /// ```
     /// use std::collections::HashMap;
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = "
-    /// {
-    ///     \"abduction\": {
-    ///         \"word\": \"abduction\",
-    ///         \"stem\": \"abduct\",
-    ///         \"avg\": [2.76, 5.53],
-    ///         \"std\": [2.06, 2.43]
-    ///     }
-    /// }";
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let sentiment_info = sentiment.get_sentiment_for_term("abduction");
@@ -465,11 +387,7 @@ impl SentimentModel {
         sentiment
     }
 
-    /// Gets the valence, arousal sentiment for a vector of terms
-    /// 
-    /// # Arguments
-    /// 
-    /// * `terms` - &Vec<&str> representation of the word tokens
+    /// Gets the valence, arousal sentiment for a word token vector of `terms`.
     ///
     /// # Examples
     ///
@@ -477,21 +395,21 @@ impl SentimentModel {
     /// use std::collections::HashMap;
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
     /// 
-    /// let custom_word_dict = "
+    /// let custom_word_dict = r#"
     /// {
-    ///     \"betrayed\": {
-    ///         \"word\": \"betrayed\",
-    ///         \"stem\": \"betrai\",
-    ///         \"avg\": [2.57, 7.24],
-    ///         \"std\": [1.83, 2.06]
+    ///     "betrayed": {
+    ///         "word": "betrayed",
+    ///         "stem": "betrai",
+    ///         "avg": [2.57, 7.24],
+    ///         "std": [1.83, 2.06]
     ///     },
-    ///     \"bees\": {
-    ///         \"word\": \"bees\",
-    ///         \"stem\": \"bee\",
-    ///         \"avg\": [3.2, 6.51],
-    ///         \"std\": [2.07, 2.14]
+    ///     "bees": {
+    ///         "word": "bees",
+    ///         "stem": "bee",
+    ///         "avg": [3.2, 6.51],
+    ///         "std": [2.07, 2.14]
     ///     }
-    /// }";
+    /// }"#;
     /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
@@ -508,28 +426,15 @@ impl SentimentModel {
         sentiment
     }
 
-    /// Gets the Russel-like description given a valence and arousal score
-    /// 
-    /// # Arguments
-    /// 
-    /// * `valence` - &f64 valence score
-    /// * `arousal` - &f64 arousal score
+    /// Gets the Russel-like description given `valence` and `arousal` scores.
     ///
     /// # Examples
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = "
-    /// {
-    ///     \"abduction\": {
-    ///         \"word\": \"abduction\",
-    ///         \"stem\": \"abduct\",
-    ///         \"avg\": [2.76, 5.53],
-    ///         \"std\": [2.06, 2.43]
-    ///     }
-    /// }";
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let sentiment_description = sentiment.get_sentiment_description(&2.76, &5.53);
@@ -561,7 +466,7 @@ impl SentimentModel {
             "tense", "nervous", "stressed", "upset"
         ];
 
-        // Normalize valence and arousal, use polar coordinates to get angle
+        // Normalize valence and arousal, using polar coordinates to get angle
         // clockwise along bottom, counterclockwise along top
         let normalized_valence = ((valence - 1.0) - 4.0) / 4.0;
         let normalized_arousal = ((arousal - 1.0) - 4.0) / 4.0;
@@ -606,28 +511,16 @@ impl SentimentModel {
         Cow::from("unknown")
     }
 
-    /// Gets the Russel-like description given a term
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token
+    /// Gets the Russel-like description given a `term` word token.
     ///
     /// # Examples
     ///
     /// ```
     /// use std::collections::HashMap;
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = "
-    /// {
-    ///     \"abduction\": {
-    ///         \"word\": \"abduction\",
-    ///         \"stem\": \"abduct\",
-    ///         \"avg\": [2.76, 5.53],
-    ///         \"std\": [2.06, 2.43]
-    ///     }
-    /// }";
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let sentiment_description = sentiment.get_term_description("abduction");
@@ -643,32 +536,28 @@ impl SentimentModel {
         self.get_sentiment_description(sentiment.get("valence").unwrap(), sentiment.get("arousal").unwrap())
     }
 
-    /// Gets the Russel-like description given a vector of terms
-    /// 
-    /// # Arguments
-    /// 
-    /// * `terms` - &Vec<&str> representation of the word tokens
+    /// Gets the Russel-like description given a word token vector of `terms`.
     ///
     /// # Examples
     ///
     /// ```
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
     /// 
-    /// let custom_word_dict = "
+    /// let custom_word_dict = r#"
     /// {
-    ///     \"betrayed\": {
-    ///         \"word\": \"betrayed\",
-    ///         \"stem\": \"betrai\",
-    ///         \"avg\": [2.57, 7.24],
-    ///         \"std\": [1.83, 2.06]
+    ///     "betrayed": {
+    ///         "word": "betrayed",
+    ///         "stem": "betrai",
+    ///         "avg": [2.57, 7.24],
+    ///         "std": [1.83, 2.06]
     ///     },
-    ///     \"bees\": {
-    ///         \"word\": \"bees\",
-    ///         \"stem\": \"bee\",
-    ///         \"avg\": [3.2, 6.51],
-    ///         \"std\": [2.07, 2.14]
+    ///     "bees": {
+    ///         "word": "bees",
+    ///         "stem": "bee",
+    ///         "avg": [3.2, 6.51],
+    ///         "std": [2.07, 2.14]
     ///     }
-    /// }";
+    /// }"#;
     /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
     /// 
     /// let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
@@ -685,14 +574,9 @@ impl SentimentModel {
         self.get_sentiment_description(sentiment.get("valence").unwrap(), sentiment.get("arousal").unwrap())
     }
 
-    /// Adds a new term to the sentiment lexicons. If the term does not already exist, it 
+    /// Adds a new `term` word token with its corresponding `valence` and `arousal`
+    /// values to the sentiment lexicons. If the `term` does not already exist, it 
     /// will be added to the custom sentiment lexicon.
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token
-    /// * `valence` - &f64 valence value
-    /// * `arousal` - &f64 arousal value
     /// 
     /// # Errors
     /// 
@@ -704,17 +588,9 @@ impl SentimentModel {
     /// use std::collections::HashMap;
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
     /// use rnltk::error::RnltkError;
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = "
-    /// {
-    ///     \"abduction\": {
-    ///         \"word\": \"abduction\",
-    ///         \"stem\": \"abduct\",
-    ///         \"avg\": [2.76, 5.53],
-    ///         \"std\": [2.06, 2.43]
-    ///     }
-    /// }";
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let mut sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let sentiment_return_value = sentiment.add_term_without_replacement("squanch", &2.0, &8.5);
@@ -756,19 +632,14 @@ impl SentimentModel {
         Ok(())
     }
     
-    /// Adds a new term to the sentiment lexicons. If this terms already exists, the term will be updated
-    /// with the new valence and arousal values. If the term does not already exist, the term will be
-    /// stemmed and added to the custom sentiment lexicon. 
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token
-    /// * `valence` - &f64 valence value
-    /// * `arousal` - &f64 arousal value
+    /// Adds a new `term` word token and its corresponding `valence` and `arousal`
+    /// values to the sentiment lexicons. If this `term` already exists, the `term` will be updated
+    /// with the new `valence` and `arousal` values. If the `term` does not already exist, the `term` will be
+    /// stemmed and added to the custom sentiment lexicon.
     ///
     /// # Errors
     /// 
-    /// Returns [`RnltkError::StemNonAscii`] in the event that the term being stemmed contains non-ASCII characters (like hopè).
+    /// Returns [`RnltkError::StemNonAscii`] in the event that the `term` being stemmed contains non-ASCII characters (like hopè).
     /// 
     /// # Examples
     ///
@@ -776,17 +647,9 @@ impl SentimentModel {
     /// use std::collections::HashMap;
     /// use rnltk::sentiment::{SentimentModel, CustomWords};
     /// use rnltk::error::RnltkError;
+    /// use rnltk::sample_data;
     /// 
-    /// let custom_word_dict = "
-    /// {
-    ///     \"abduction\": {
-    ///         \"word\": \"abduction\",
-    ///         \"stem\": \"abduct\",
-    ///         \"avg\": [2.76, 5.53],
-    ///         \"std\": [2.06, 2.43]
-    ///     }
-    /// }";
-    /// let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
+    /// let custom_words_sentiment_hashmap: CustomWords = sample_data::get_sample_custom_word_dict();
     /// 
     /// let mut sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
     /// let sentiment_return_value = sentiment.add_term_with_replacement("abduction", &8.0, &8.5);
@@ -858,9 +721,9 @@ mod tests {
         let setup = Setup::new();
         let sentiment = SentimentModel::new(setup.custom_words);
         let arousal = sentiment.get_raw_arousal("abduction");
-        let correct_arousal = vec![5.53, 2.43];
+        let raw_sentiment = RawSentiment::new(5.53, 2.43);
 
-        assert_eq!(arousal, correct_arousal);
+        assert_eq!(arousal, raw_sentiment);
     }
 
     #[test]
@@ -868,9 +731,9 @@ mod tests {
         let setup = Setup::new();
         let sentiment = SentimentModel::new(setup.custom_words);
         let valence = sentiment.get_raw_valence("abduction");
-        let correct_valence = vec![2.76, 2.06];
+        let raw_sentiment = RawSentiment::new(2.76, 2.06);
 
-        assert_eq!(valence, correct_valence);
+        assert_eq!(valence, raw_sentiment);
     }
 
     #[test]
