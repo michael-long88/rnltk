@@ -33,15 +33,15 @@
 //! ```
 //! use rnltk::sentiment::{SentimentModel, CustomWords};
 //! 
-//! let custom_word_dict = "
+//! let custom_word_dict = r#"
 //! {
-//!     \"abduction\": {
-//!         \"word\": \"abduction\",
-//!         \"stem\": \"abduct\",
-//!         \"avg\": [2.76, 5.53],
-//!         \"std\": [2.06, 2.43]
+//!     "abduction": {
+//!         "word": "abduction",
+//!         "stem": "abduct",
+//!         "avg": [2.76, 5.53],
+//!         "std": [2.06, 2.43]
 //!     }
-//! }";
+//! }"#;
 //! 
 //! let custom_words_sentiment_hashmap: CustomWords = serde_json::from_str(custom_word_dict).unwrap();
 //! 
