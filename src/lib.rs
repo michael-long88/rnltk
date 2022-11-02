@@ -8,7 +8,7 @@
 //! ## Getting Started
 //!
 //! To start using RNLTK simply add the following to your Cargo.toml file:
-//! ```ignore
+//! ```toml
 //! [dependencies]
 //! rnltk = "0.1.3"
 //! ```
