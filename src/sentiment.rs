@@ -11,6 +11,8 @@ use crate::error::RnltkError;
 pub type CustomWords = HashMap<String, SentimentDictValue>;
 pub type CustomStems = HashMap<String, SentimentDictValue>;
 
+/// Struct for holding raw arousal and sentiment values for
+/// `average` and `standard_deviation`.
 #[derive(Debug, PartialEq)]
 pub struct RawSentiment {
     pub average: f64,
@@ -58,11 +60,8 @@ pub struct SentimentModel {
 }
 
 impl SentimentModel {
-    /// Creates new instance of SentimentModel
-    /// 
-    /// # Arguments
-    /// 
-    /// * `custom_words` - CustomWords representation of sentiment lexicon
+    /// Creates new instance of SentimentModel from `custom_words`, a [`CustomWords`]
+    /// sentiment lexicon.
     ///
     /// # Examples
     ///
@@ -95,11 +94,7 @@ impl SentimentModel {
         }
     }
 
-    /// Adds new lexicon of stemmed words
-    /// 
-    /// # Arguments
-    /// 
-    /// * `custom_stems` - CustomStems representation of sentiment lexicon
+    /// Adds new `custom_stems` lexicon of stemmed words.
     ///
     /// # Examples
     ///
@@ -130,11 +125,7 @@ impl SentimentModel {
         self.custom_stems = custom_stems        
     }
 
-    /// Checks if a term exists in the sentiment dictionaries
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token 
+    /// Checks if a `term` exists in the sentiment dictionaries.
     ///
     /// # Examples
     ///
@@ -153,11 +144,7 @@ impl SentimentModel {
         self.custom_words.contains_key(term) || self.custom_stems.contains_key(term)
     }
 
-    /// Gets the raw arousal values (average, standard deviation) for a given term
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token 
+    /// Gets the raw arousal values ([`RawSentiment`]) for a given `term` word token.
     ///
     /// # Examples
     ///
@@ -191,11 +178,7 @@ impl SentimentModel {
         RawSentiment::new(average, std_dev)
     }
 
-    /// Gets the raw valence values (average, standard deviation) for a given term
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token 
+    /// Gets the raw valence values ([`RawSentiment`]) for a given `term` word token.
     ///
     /// # Examples
     ///
@@ -229,11 +212,7 @@ impl SentimentModel {
         RawSentiment::new(average, std_dev)
     }
 
-    /// Gets the arousal value for a given term
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token 
+    /// Gets the arousal value for a given `term` word token.
     ///
     /// # Examples
     ///
@@ -253,11 +232,7 @@ impl SentimentModel {
         self.get_raw_arousal(term).average
     }
 
-    /// Gets the valence value for a given term
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token 
+    /// Gets the valence value for a given `term` word token.
     ///
     /// # Examples
     ///
@@ -277,11 +252,7 @@ impl SentimentModel {
         self.get_raw_valence(term).average
     }
 
-    /// Gets the arousal value for a given vector of terms
-    /// 
-    /// # Arguments
-    /// 
-    /// * `terms` - &Vec<&str> representation of the word tokens
+    /// Gets the arousal value for a word token vector of `terms`.
     ///
     /// # Examples
     ///
@@ -336,11 +307,7 @@ impl SentimentModel {
         arousal
     }
 
-    /// Gets the valence value for a given vector of terms
-    /// 
-    /// # Arguments
-    /// 
-    /// * `terms` - &Vec<&str> representation of the word tokens
+    /// Gets the valence value for a word token vector of `terms`.
     ///
     /// # Examples
     ///
@@ -395,11 +362,7 @@ impl SentimentModel {
         valence
     }
 
-    /// Gets the valence, arousal sentiment for a term
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token
+    /// Gets the valence, arousal sentiment for a `term` word token.
     ///
     /// # Examples
     ///
@@ -424,11 +387,7 @@ impl SentimentModel {
         sentiment
     }
 
-    /// Gets the valence, arousal sentiment for a vector of terms
-    /// 
-    /// # Arguments
-    /// 
-    /// * `terms` - &Vec<&str> representation of the word tokens
+    /// Gets the valence, arousal sentiment for a word token vector of `terms`.
     ///
     /// # Examples
     ///
@@ -467,12 +426,7 @@ impl SentimentModel {
         sentiment
     }
 
-    /// Gets the Russel-like description given a valence and arousal score
-    /// 
-    /// # Arguments
-    /// 
-    /// * `valence` - &f64 valence score
-    /// * `arousal` - &f64 arousal score
+    /// Gets the Russel-like description given `valence` and `arousal` scores.
     ///
     /// # Examples
     ///
@@ -512,7 +466,7 @@ impl SentimentModel {
             "tense", "nervous", "stressed", "upset"
         ];
 
-        // Normalize valence and arousal, use polar coordinates to get angle
+        // Normalize valence and arousal, using polar coordinates to get angle
         // clockwise along bottom, counterclockwise along top
         let normalized_valence = ((valence - 1.0) - 4.0) / 4.0;
         let normalized_arousal = ((arousal - 1.0) - 4.0) / 4.0;
@@ -557,11 +511,7 @@ impl SentimentModel {
         Cow::from("unknown")
     }
 
-    /// Gets the Russel-like description given a term
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token
+    /// Gets the Russel-like description given a `term` word token.
     ///
     /// # Examples
     ///
@@ -586,11 +536,7 @@ impl SentimentModel {
         self.get_sentiment_description(sentiment.get("valence").unwrap(), sentiment.get("arousal").unwrap())
     }
 
-    /// Gets the Russel-like description given a vector of terms
-    /// 
-    /// # Arguments
-    /// 
-    /// * `terms` - &Vec<&str> representation of the word tokens
+    /// Gets the Russel-like description given a word token vector of `terms`.
     ///
     /// # Examples
     ///
@@ -628,14 +574,9 @@ impl SentimentModel {
         self.get_sentiment_description(sentiment.get("valence").unwrap(), sentiment.get("arousal").unwrap())
     }
 
-    /// Adds a new term to the sentiment lexicons. If the term does not already exist, it 
+    /// Adds a new `term` word token with its corresponding `valence` and `arousal`
+    /// values to the sentiment lexicons. If the `term` does not already exist, it 
     /// will be added to the custom sentiment lexicon.
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token
-    /// * `valence` - &f64 valence value
-    /// * `arousal` - &f64 arousal value
     /// 
     /// # Errors
     /// 
@@ -691,19 +632,14 @@ impl SentimentModel {
         Ok(())
     }
     
-    /// Adds a new term to the sentiment lexicons. If this terms already exists, the term will be updated
-    /// with the new valence and arousal values. If the term does not already exist, the term will be
-    /// stemmed and added to the custom sentiment lexicon. 
-    /// 
-    /// # Arguments
-    /// 
-    /// * `term` - &str representation of the word token
-    /// * `valence` - &f64 valence value
-    /// * `arousal` - &f64 arousal value
+    /// Adds a new `term` word token and its corresponding `valence` and `arousal`
+    /// values to the sentiment lexicons. If this `term` already exists, the `term` will be updated
+    /// with the new `valence` and `arousal` values. If the `term` does not already exist, the `term` will be
+    /// stemmed and added to the custom sentiment lexicon.
     ///
     /// # Errors
     /// 
-    /// Returns [`RnltkError::StemNonAscii`] in the event that the term being stemmed contains non-ASCII characters (like hopè).
+    /// Returns [`RnltkError::StemNonAscii`] in the event that the `term` being stemmed contains non-ASCII characters (like hopè).
     /// 
     /// # Examples
     ///

@@ -1,3 +1,8 @@
+//! Module containing function to get [`CustomWords`] struct primarily
+//! for the use in documentation.
+//! 
+//! [`CustomWords`]: ./sentiment/type.CustomWords.html
+
 use crate::sentiment::CustomWords;
 
 
