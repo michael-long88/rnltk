@@ -16,12 +16,12 @@ fn main() {
     for record in reader.records() {
         let record = record.unwrap();
         let word = record[1].to_owned();
+
         let stemmed_word = stem::get(&word).unwrap();
-        if &word == "betrayal" {
-            println!("{:?}", &stemmed_word)
-        }
+
         let avg = vec![record[2].parse::<f64>().unwrap(), record[5].parse::<f64>().unwrap()];
         let std = vec![record[3].parse::<f64>().unwrap(), record[6].parse::<f64>().unwrap()];
+        
         let sentiment_dict = SentimentDictValue::new(word, stemmed_word, avg, std);
         custom_words.insert(record[1].to_owned(), sentiment_dict);
     }
