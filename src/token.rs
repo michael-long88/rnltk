@@ -97,6 +97,48 @@ pub fn get_term_frequencies_from_sentence(sentence: &str) -> BTreeMap<String, f6
     get_term_frequencies_from_word_vector(sentence_tokens)
 }
 
+/// Gets a count of all words from a vector of `sentence`s.
+///
+/// # Examples
+///
+/// ```
+/// use std::collections::BTreeMap;
+/// use rnltk::token;
+/// 
+/// let sentences = vec!["fear leads to anger", "anger leads to hatred", "hatred leads to conflict", "conflict leads to suffering."];
+/// let word_counts1 = BTreeMap::from([
+///     ("fear".to_string(), 1.), ("leads".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 1.), ("hatred".to_string(), 0.), ("conflict".to_string(), 0.), ("suffering".to_string(), 0.)
+/// ]);
+/// let word_counts2 = BTreeMap::from([
+///     ("fear".to_string(), 0.), ("leads".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 1.), ("hatred".to_string(), 1.), ("conflict".to_string(), 0.), ("suffering".to_string(), 0.)
+/// ]);
+/// let word_counts3 = BTreeMap::from([
+///     ("fear".to_string(), 0.), ("leads".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 0.), ("hatred".to_string(), 1.), ("conflict".to_string(),1.), ("suffering".to_string(), 0.)
+/// ]);
+/// let word_counts4 = BTreeMap::from([
+///     ("fear".to_string(), 0.), ("leads".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 0.), ("hatred".to_string(), 0.), ("conflict".to_string(), 1.), ("suffering".to_string(), 1.)
+/// ]);
+/// let term_frequencies = token::get_term_frequencies_from_sentences(&sentences);
+///
+/// assert_eq!(vec![word_counts1, word_counts2, word_counts3, word_counts4], term_frequencies);
+/// ```
+pub fn get_term_frequencies_from_sentences(sentences: &[&str]) -> Vec<BTreeMap<String, f64>> {
+    let mut total_terms: Vec<String> = vec![];
+    let mut term_frequencies: Vec<BTreeMap<String, f64>> = sentences.iter().map(|sentence| {
+        let frequencies = get_term_frequencies_from_sentence(sentence);
+        total_terms.extend(frequencies.keys().cloned().collect::<Vec<String>>());
+        frequencies
+    }).collect();
+    for frequency_counts in &mut term_frequencies {
+        for term in &total_terms {
+            if !frequency_counts.contains_key(term) {
+                frequency_counts.insert(term.to_string(), 0.);
+            }
+        }
+    }
+    term_frequencies
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -123,5 +165,25 @@ mod tests {
         let word_counts = BTreeMap::from([("fear".to_string(), 1.), ("leads".to_string(), 4.), ("to".to_string(), 4.), ("anger".to_string(), 2.), ("hatred".to_string(), 2.), ("conflict".to_string(), 2.), ("suffering".to_string(), 1.)]);
         let term_frequencies = get_term_frequencies_from_word_vector(tokens);
         assert_eq!(word_counts, term_frequencies);
+    }
+
+    #[test]
+    fn test_term_frequencies_from_sentences() {
+        let sentences = vec!["fear leads to anger", "anger leads to hatred", "hatred leads to conflict", "conflict leads to suffering."];
+        let word_counts1 = BTreeMap::from([
+            ("fear".to_string(), 1.), ("leads".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 1.), ("hatred".to_string(), 0.), ("conflict".to_string(), 0.), ("suffering".to_string(), 0.)
+        ]);
+        let word_counts2 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("leads".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 1.), ("hatred".to_string(), 1.), ("conflict".to_string(), 0.), ("suffering".to_string(), 0.)
+        ]);
+        let word_counts3 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("leads".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 0.), ("hatred".to_string(), 1.), ("conflict".to_string(),1.), ("suffering".to_string(), 0.)
+        ]);
+        let word_counts4 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("leads".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 0.), ("hatred".to_string(), 0.), ("conflict".to_string(), 1.), ("suffering".to_string(), 1.)
+        ]);
+        let term_frequencies = get_term_frequencies_from_sentences(&sentences);
+        
+        assert_eq!(vec![word_counts1, word_counts2, word_counts3, word_counts4], term_frequencies);
     }
 }
