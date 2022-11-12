@@ -10,15 +10,15 @@ pub struct DocumentTermFrequencies {
 }
 
 /// Struct for holding the resulting `tfidf_matrix`
-/// from [`DocumentTermFrequencies::get_tfidf`]
+/// from [`DocumentTermFrequencies::get_tfidf_from_term_frequencies`]
 pub struct TfidfMatrix {
-    pub tfidf_matrix: GenericMatrix
+    tfidf_matrix: GenericMatrix
 }
 
 /// Struct for holding the resulting `cosine_similarity_matrix`
 /// from [`TfidfMatrix::get_cosine_similarity_from_tfidf`]
 pub struct CosineSimilarityMatrix {
-    pub cosine_similarity_matrix: GenericMatrix
+    cosine_similarity_matrix: GenericMatrix
 }
 
 impl DocumentTermFrequencies {
@@ -71,9 +71,9 @@ impl DocumentTermFrequencies {
     /// use rnltk::sample_data;
     /// 
     /// let document_term_frequencies: DocumentTermFrequencies = DocumentTermFrequencies::new(sample_data::get_term_frequencies());
-    /// let tfidf_matrix = document_term_frequencies.get_tfidf();
+    /// let tfidf_matrix = document_term_frequencies.get_tfidf_from_term_frequencies();
     /// ```
-    pub fn get_tfidf(&self) -> TfidfMatrix {
+    pub fn get_tfidf_from_term_frequencies(&self) -> TfidfMatrix {
         let mut document_term_frequencies = self.document_term_frequencies.clone();
         for row_index in 0..document_term_frequencies.nrows() {
             let term_count: f64 = document_term_frequencies.row(row_index).iter().fold(0., |acc, frequency| {
@@ -102,11 +102,19 @@ impl DocumentTermFrequencies {
 }
 
 impl TfidfMatrix {
+    /// Gets the TF-IDF matrix that was created from [`DocumentTermFrequencies::get_tfidf_from_term_frequencies`].
+    /// 
+    /// This ensures the user can't instantiate their own instance of [`TfidfMatrix`] and must use the 
+    /// formatted, normalized matrix.
+    pub fn get_tfidf_matrix(&self) -> &GenericMatrix {
+        &self.tfidf_matrix
+    }
+
     /// Gets the cosine similarity matrix from the [`TfidfMatrix`]'s `tfidf_matrix`.
     /// 
     /// Normally, calculating the cosine similarity of two document vectors would look like
     /// \\(\cos \theta = \frac{D_i \cdot D_j}{|D_i| |D_j|}\\). Since the TF-IDF matrix returned
-    /// from [`DocumentTermFrequencies::get_tfidf`] is already normalized, this simplifies
+    /// from [`DocumentTermFrequencies::get_tfidf_from_term_frequencies`] is already normalized, this simplifies
     /// to \\(\cos \theta = D_i \cdot D_j\\). 
     /// 
     /// The resulting matrix has 1's along the diagonal since the similarity of a document
@@ -120,7 +128,7 @@ impl TfidfMatrix {
     /// use rnltk::sample_data;
     /// 
     /// let document_term_frequencies: DocumentTermFrequencies = DocumentTermFrequencies::new(sample_data::get_term_frequencies());
-    /// let tfidf_matrix = document_term_frequencies.get_tfidf();
+    /// let tfidf_matrix = document_term_frequencies.get_tfidf_from_term_frequencies();
     /// let cosine_similarity_matrix = tfidf_matrix.get_cosine_similarity_from_tfidf();
     /// ```
     pub fn get_cosine_similarity_from_tfidf(&self) -> CosineSimilarityMatrix {
@@ -140,6 +148,17 @@ impl TfidfMatrix {
         CosineSimilarityMatrix {
             cosine_similarity_matrix
         }
+    }
+}
+
+impl CosineSimilarityMatrix {
+    /// Gets the cosine similarity matrix that was created 
+    /// from [`TfidfMatrix::get_cosine_similarity_from_tfidf`].
+    /// 
+    /// This ensures the user can't instantiate their own instance of [`CosineSimilarityMatrix`] and must use the 
+    /// formatted matrix returned from [`TfidfMatrix::get_cosine_similarity_from_tfidf`].
+    pub fn get_cosine_similarity_matrix(&self) -> &GenericMatrix {
+        &self.cosine_similarity_matrix
     }
 }
 
@@ -164,14 +183,14 @@ mod tests {
                                                                             0., 0., 0., 0.6666666666666667,
                                                                             0., 0., 0.894427190999916, 0.,
                                                                             0.3535533905932738, 0., 0., 0.,]);
-        let output = document_term_frequencies.get_tfidf();
+        let output = document_term_frequencies.get_tfidf_from_term_frequencies();
         assert_eq!(output.tfidf_matrix, tfidf_matrix);
     }
 
     #[test]
     fn cosine_similarity() {
         let document_term_frequencies: DocumentTermFrequencies = DocumentTermFrequencies::new(sample_data::get_term_frequencies());
-        let tfidf_matrix = document_term_frequencies.get_tfidf();
+        let tfidf_matrix = document_term_frequencies.get_tfidf_from_term_frequencies();
         let cosine_similarity_matrix = DMatrix::from_row_slice(4, 4, &[1., 0., 0., 0.,
                                                                                             0., 1., 0., 0.,
                                                                                             0., 0., 1., 0.149071198499986,

@@ -26,8 +26,9 @@ fn main() {
     let document_term_frequencies = DMatrix::from_vec(nrows, ncols, all_term_frequencies);
 
     let document_term_frequency_matrix = document::DocumentTermFrequencies::new(document_term_frequencies);
-    let tfidf_matrix = document_term_frequency_matrix.get_tfidf();
-    let cosine_similarity_matrix = tfidf_matrix.get_cosine_similarity_from_tfidf().cosine_similarity_matrix;
+    let tfidf_matrix = document_term_frequency_matrix.get_tfidf_from_term_frequencies();
+    let cosine_similarity = tfidf_matrix.get_cosine_similarity_from_tfidf();
+    let cosine_similarity_matrix = cosine_similarity.get_cosine_similarity_matrix();
 
     for row_index in 0..ncols {
         println!(
