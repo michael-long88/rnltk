@@ -19,6 +19,16 @@ Stemming currently uses modified code from [rust-stem](https://github.com/minhnh
 
 More information on the stemming algorithm can be found [here](https://tartarus.org/martin/PorterStemmer/).
 
+## TF-IDF
+Term frequency–inverse document frequency (TF-IDF) is an algorithm used to find document similarity. Creating a TF-IDF matrix takes place over two steps:
+1. Apply a weight, $w_{i,j}$, for every term, $t_i$, in the document, $D_j$. $w_{i,j}$ is defined as $tf_{i,j} \times idf_i$, where $tf_{i,j}$ is the number of occurrences of $t_i$ in $D_j$, and $idf_i$ is the log of inverse fraction of documents $n_i$ that contain at least one occurrence of $t_i, idf_i = ln(\frac{n}{n_i})$.
+1. Take the weighted matrix and then normalize each document vector in order to remove the influence of document length.
+
+The weighted, normalized matrix can then be used to find the cosine similarity between documents. 
+Normally, calculating the cosine similarity of two document vectors would look like $\cos \theta = \frac{D_i \cdot D_j}{|D_i| |D_j|}$. Since the matrix is already normalized, this simplifies to $\cos \theta = D_i \cdot D_j$. 
+
+The resulting $MxM$ matrix, where $M$ is the number of columns from the TF-IDF matrix, has 1's along the diagonal since the similarity of a document with itself is 1. The intersections of rows and columns, $M_{i,j}$, is the cosine similarity value between $D_i$ and $D_j$.
+
 ## Roadmap
 * article summary (based on term frequency)
 * topic clustering
