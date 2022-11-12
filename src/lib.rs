@@ -48,7 +48,7 @@
 //! let sentiment = SentimentModel::new(custom_words_sentiment_hashmap);
 //! ```
 //! 
-//! Checkout the examples folder in the github project repository for a more comprehensive example.
+//! Checkout the examples folder in the github project repository for more comprehensive examples.
 //! 
 
 pub mod token;
