@@ -1,17 +1,13 @@
 //! Module containing functions used to tokenize strings and get term frequencies.
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use regex::Regex;
 
 
 const STOP_WORDS: &[&str] = &["i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "you're", "you've", "you'll", "you'd", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "she's", "her", "hers", "herself", "it", "it's", "its", "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", "that", "that'll", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "don't", "should", "should've", "now", "d", "ll", "m", "o", "re", "ve", "y", "ain", "aren", "aren't", "couldn", "couldn't", "didn", "didn't", "doesn", "doesn't", "hadn", "hadn't", "hasn", "hasn't", "haven", "haven't", "isn", "isn't", "ma", "mightn", "mightn't", "mustn", "mustn't", "needn", "needn't", "shan", "shan't", "shouldn", "shouldn't", "wasn", "wasn't", "weren", "weren't", "won", "won't", "wouldn", "wouldn't"];
 
-/// Converts documents to sentence vector.
-/// 
-/// # Arguments
-/// 
-/// * `document` - A &str representation of the text document.
+/// Converts a `document` to sentence vector.
 ///
 /// # Examples
 ///
@@ -35,11 +31,7 @@ pub fn tokenize_into_sentences(document: &str) -> Vec<String> {
     full_sentences
 }
 
-/// Converts sentence to token vector.
-/// 
-/// # Arguments
-/// 
-/// * `sentence` - A &str representation of the sentence.
+/// Converts `sentence` to token vector.
 ///
 /// # Examples
 ///
@@ -62,52 +54,44 @@ pub fn tokenize_sentence(sentence: &str) -> Vec<String> {
     tokens
 }
 
-/// Gets a count of all words from a term vector.
-/// 
-/// # Arguments
-/// 
-/// * `word_tokens` - A &str vector containing words to be counted
+/// Gets a count of all words from a vector of `word_tokens`.
 ///
 /// # Examples
 ///
 /// ```
-/// use std::collections::HashMap;
+/// use std::collections::BTreeMap;
 /// use rnltk::token;
 /// 
 /// let arg = vec!["fear", "leads", "to", "anger", "anger", "leads", "to", "hatred", "hatred", "leads", "to", "conflict", "conflict", "leads", "to", "suffering"];
-/// let word_counts = HashMap::from([("fear".to_string(), 1), ("leads".to_string(), 4), ("to".to_string(), 4), ("anger".to_string(), 2), ("hatred".to_string(), 2), ("conflict".to_string(), 2), ("suffering".to_string(), 1)]);
+/// let word_counts = BTreeMap::from([("fear".to_string(), 1.), ("leads".to_string(), 4.), ("to".to_string(), 4.), ("anger".to_string(), 2.), ("hatred".to_string(), 2.), ("conflict".to_string(), 2.), ("suffering".to_string(), 1.)]);
 /// let term_frequencies = token::get_term_frequencies_from_word_vector(arg);
 ///
 /// assert_eq!(word_counts, term_frequencies);
 /// ```
-pub fn get_term_frequencies_from_word_vector(word_tokens: Vec<&str>) -> HashMap<String, u32> {
-    let mut word_counts: HashMap<String, u32> = HashMap::new();
+pub fn get_term_frequencies_from_word_vector(word_tokens: Vec<&str>) -> BTreeMap<String, f64> {
+    let mut word_counts: BTreeMap<String, f64> = BTreeMap::new();
     for word in word_tokens {
-        let count = word_counts.entry(word.to_string()).or_insert(0);
-        *count += 1;
+        let count = word_counts.entry(word.to_string()).or_insert(0.);
+        *count += 1.;
     }
     word_counts
 }
 
-/// Gets a count of all words from a sentence.
-/// 
-/// # Arguments
-/// 
-/// * `sentence` - A &str representation of the sentence to be tokenized and counted
+/// Gets a count of all words from a `sentence`.
 ///
 /// # Examples
 ///
 /// ```
-/// use std::collections::HashMap;
+/// use std::collections::BTreeMap;
 /// use rnltk::token;
 /// 
 /// let sentence = "fear leads to anger, anger leads to hatred, hatred leads to conflict, conflict leads to suffering.";
-/// let word_counts = HashMap::from([("fear".to_string(), 1), ("leads".to_string(), 4), ("to".to_string(), 4), ("anger".to_string(), 2), ("hatred".to_string(), 2), ("conflict".to_string(), 2), ("suffering".to_string(), 1)]);
+/// let word_counts = BTreeMap::from([("fear".to_string(), 1.), ("leads".to_string(), 4.), ("to".to_string(), 4.), ("anger".to_string(), 2.), ("hatred".to_string(), 2.), ("conflict".to_string(), 2.), ("suffering".to_string(), 1.)]);
 /// let term_frequencies = token::get_term_frequencies_from_sentence(sentence);
 ///
 /// assert_eq!(word_counts, term_frequencies);
 /// ```
-pub fn get_term_frequencies_from_sentence(sentence: &str) -> HashMap<String, u32> {
+pub fn get_term_frequencies_from_sentence(sentence: &str) -> BTreeMap<String, f64> {
     let sentence_tokens = tokenize_sentence(sentence);
     let sentence_tokens: Vec<&str> = sentence_tokens.iter().map(|s| s.as_str()).collect();
     get_term_frequencies_from_word_vector(sentence_tokens)
@@ -136,7 +120,7 @@ mod tests {
     #[test]
     fn test_term_frequencies_from_str_vector() {
         let tokens = vec!["fear", "leads", "to", "anger", "anger", "leads", "to", "hatred", "hatred", "leads", "to", "conflict", "conflict", "leads", "to", "suffering"];
-        let word_counts = HashMap::from([("fear".to_string(), 1), ("leads".to_string(), 4), ("to".to_string(), 4), ("anger".to_string(), 2), ("hatred".to_string(), 2), ("conflict".to_string(), 2), ("suffering".to_string(), 1)]);
+        let word_counts = BTreeMap::from([("fear".to_string(), 1.), ("leads".to_string(), 4.), ("to".to_string(), 4.), ("anger".to_string(), 2.), ("hatred".to_string(), 2.), ("conflict".to_string(), 2.), ("suffering".to_string(), 1.)]);
         let term_frequencies = get_term_frequencies_from_word_vector(tokens);
         assert_eq!(word_counts, term_frequencies);
     }
