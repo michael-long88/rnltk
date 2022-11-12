@@ -1,9 +1,9 @@
-//! Module containing function to get [`CustomWords`] struct primarily
-//! for the use in documentation.
-//! 
-//! [`CustomWords`]: ./sentiment/type.CustomWords.html
+//! Module containing functions to retrieve sample data for
+//! use in the main modules.
 
 use crate::sentiment::CustomWords;
+use crate::document::GenericMatrix;
+use nalgebra::DMatrix;
 
 
 pub fn get_sample_custom_word_dict() -> CustomWords {
@@ -30,4 +30,18 @@ pub fn get_sample_custom_word_dict() -> CustomWords {
     }"#;
 
     serde_json::from_str(custom_word_dict).unwrap()
+}
+
+pub fn get_term_frequencies() -> GenericMatrix {
+    DMatrix::from_row_slice(11, 4, &[1., 0., 0., 0.,
+        0., 1., 0., 0.,
+        0., 0., 1., 1.,
+        1., 0., 0., 0.,
+        1., 0., 0., 0.,
+        2., 0., 0., 0.,
+        0., 0., 0., 1.,
+        0., 1., 0., 0.,
+        0., 0., 0., 1.,
+        0., 0., 1., 0.,
+        1., 0., 0., 0.,])
 }
