@@ -12,5 +12,7 @@ pub enum RnltkError {
     SentimentTermExists,
     /// Could not stem a term due to non-ASCII characters
     #[error("Could not stem term due to non-ASCII characters present")]
-    StemNonAscii
+    StemNonAscii,
+    #[error("Value 'k' must fall within 1 <= k <= n, where n is the number of columns in the TF-IDF matrix")]
+    LsaOutOfBounds
 }

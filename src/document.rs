@@ -2,23 +2,35 @@
 
 use nalgebra::{Matrix, Dynamic, VecStorage};
 
+use crate::error::RnltkError;
+
 pub type GenericMatrix = Matrix<f64, Dynamic, Dynamic, VecStorage<f64, Dynamic, Dynamic>>;
 
 /// Struct for holding the matrix of `document_term_frequencies`
+#[derive(Debug, Clone)]
 pub struct DocumentTermFrequencies {
     pub document_term_frequencies: GenericMatrix
 }
 
 /// Struct for holding the resulting `tfidf_matrix`
 /// from [`DocumentTermFrequencies::get_tfidf_from_term_frequencies`]
+#[derive(Debug, Clone)]
 pub struct TfidfMatrix {
     tfidf_matrix: GenericMatrix
 }
 
 /// Struct for holding the resulting `cosine_similarity_matrix`
 /// from [`TfidfMatrix::get_cosine_similarity_from_tfidf`]
+#[derive(Debug, Clone)]
 pub struct CosineSimilarityMatrix {
     cosine_similarity_matrix: GenericMatrix
+}
+
+/// Struct for holding the resulting `cosine_similarity_matrix`
+/// from [`TfidfMatrix::get_cosine_similarity_from_tfidf`]
+#[derive(Debug, Clone)]
+pub struct LsaCosineSimilarityMatrix {
+    lsa_cosine_similarity_matrix: GenericMatrix
 }
 
 impl DocumentTermFrequencies {
@@ -149,6 +161,65 @@ impl TfidfMatrix {
             cosine_similarity_matrix
         }
     }
+
+    /// Gets the Latent Semantic Analysis (LSA) cosine similarity matrix from the [`TfidfMatrix`]'s `tfidf_matrix`.
+    /// 
+    /// Singular Value Decomposition (SVD) is applied to the \\(m \times \n\\) `tfidf_matrix` to reduce dimensionality.
+    /// The k largest singular values are chosen to produce a reduced \\({V_k}^T\\) matrix, with 
+    /// \\(1 \le v \le n\\). Each document column in the \\({V_k}^T\\) matrix is normalized and then we 
+    /// dot product them together. To shift the resulting dot product from a range of [-1...-1] to 
+    /// [0...1], we add 1 to the dot product and then divide by 2.
+    /// 
+    /// The resulting matrix has 1's along the diagonal since the similarity of a document
+    /// with itself is 1. The intersections of rows and columns, \\(M_{i,j}\\), is the cosine 
+    /// similarity value between \\(D_i\\) and \\(D_j\\).
+    ///
+    /// # Examples
+    /// 
+    /// ```
+    /// use rnltk::document::DocumentTermFrequencies;
+    /// use rnltk::sample_data;
+    /// 
+    /// let document_term_frequencies: DocumentTermFrequencies = DocumentTermFrequencies::new(sample_data::get_term_frequencies());
+    /// let tfidf_matrix = document_term_frequencies.get_tfidf_from_term_frequencies();
+    /// let lsa_cosine_similarity_matrix = tfidf_matrix.get_lsa_cosine_similarity_from_tfidf(2).unwrap();
+    /// ```
+    pub fn get_lsa_cosine_similarity_from_tfidf(&self, k: usize) -> Result<LsaCosineSimilarityMatrix, RnltkError> {
+        if k > self.tfidf_matrix.ncols() {
+            return Err(RnltkError::LsaOutOfBounds);
+        }
+        let svd_matrix = self.tfidf_matrix.clone().svd(true, true);
+        let mut v_t = svd_matrix.v_t.unwrap();
+
+        let mut v_tk = v_t.slice_mut((0, 0), (k, v_t.ncols()));
+
+        for mut column in v_tk.column_iter_mut() {
+            let normalized = column.normalize();
+            column.copy_from(&normalized);
+        }
+
+        let num_cols = v_tk.ncols();
+        let mut lsa_cosine_similarity_matrix: GenericMatrix = GenericMatrix::zeros(num_cols, num_cols);
+        for col_index in 0..num_cols {
+            for inner_col_index in 0..num_cols {
+                if col_index == inner_col_index {
+                    lsa_cosine_similarity_matrix[(col_index, inner_col_index)] = 1.
+                } else {
+                    let mut dot_product = v_tk.column(col_index).dot(&v_tk.column(inner_col_index));
+                    if dot_product.is_nan() {
+                        dot_product = 0.;
+                    }
+                    let shifted_dot_product = (dot_product + 1.) / 2.;
+                    lsa_cosine_similarity_matrix[(col_index, inner_col_index)] = shifted_dot_product
+                }
+            }
+        }
+
+        Ok(LsaCosineSimilarityMatrix {
+            lsa_cosine_similarity_matrix
+        })
+        
+    }
 }
 
 impl CosineSimilarityMatrix {
@@ -159,6 +230,17 @@ impl CosineSimilarityMatrix {
     /// formatted matrix returned from [`TfidfMatrix::get_cosine_similarity_from_tfidf`].
     pub fn get_cosine_similarity_matrix(&self) -> &GenericMatrix {
         &self.cosine_similarity_matrix
+    }
+}
+
+impl LsaCosineSimilarityMatrix {
+    /// Gets the LSA cosine similarity matrix that was created 
+    /// from [`TfidfMatrix::get_lsa_cosine_similarity_from_tfidf`].
+    /// 
+    /// This ensures the user can't instantiate their own instance of [`LsaCosineSimilarityMatrix`] and must use the 
+    /// formatted matrix returned from [`TfidfMatrix::get_lsa_cosine_similarity_from_tfidf`].
+    pub fn get_lsa_cosine_similarity_matrix(&self) -> &GenericMatrix {
+        &self.lsa_cosine_similarity_matrix
     }
 }
 
@@ -197,5 +279,17 @@ mod tests {
                                                                                             0., 0., 0.149071198499986, 1.,]);
         let output = tfidf_matrix.get_cosine_similarity_from_tfidf();
         assert_eq!(output.cosine_similarity_matrix, cosine_similarity_matrix);
+    }
+
+    #[test]
+    fn lsa_cosine_similarity() {
+        let document_term_frequencies: DocumentTermFrequencies = DocumentTermFrequencies::new(sample_data::get_term_frequencies());
+        let tfidf_matrix = document_term_frequencies.get_tfidf_from_term_frequencies();
+        let lsa_cosine_similarity_matrix = DMatrix::from_row_slice(4, 4, &[1., 0.5, 0.5, 0.5,
+                                                                                            0.5, 1., 0.5, 0.5,
+                                                                                            0.5, 0.5, 1., 1.,
+                                                                                            0.5, 0.5, 1., 1.,]);
+        let output = tfidf_matrix.get_lsa_cosine_similarity_from_tfidf(2).unwrap();
+        assert_eq!(output.lsa_cosine_similarity_matrix, lsa_cosine_similarity_matrix);
     }
 }
