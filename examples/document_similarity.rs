@@ -27,9 +27,11 @@ fn main() {
 
     let document_term_frequency_matrix = document::DocumentTermFrequencies::new(document_term_frequencies);
     let tfidf_matrix = document_term_frequency_matrix.get_tfidf_from_term_frequencies();
+
     let cosine_similarity = tfidf_matrix.get_cosine_similarity_from_tfidf();
     let cosine_similarity_matrix = cosine_similarity.get_cosine_similarity_matrix();
 
+    println!("COSINE SIMILARITY MATRIX");
     for row_index in 0..ncols {
         println!(
             "Document {}          {:.2}          {:.2}          {:.2}          {:.2}",
@@ -38,6 +40,24 @@ fn main() {
             &cosine_similarity_matrix[(row_index, 1)],
             &cosine_similarity_matrix[(row_index, 2)],
             &cosine_similarity_matrix[(row_index, 3)]
+        )
+    }
+    println!("              Document 1    Document 2    Document 3    Document 4");
+
+    println!("\n-----------------------------\n");
+
+    let lsa_cosine_similarity = tfidf_matrix.get_lsa_cosine_similarity_from_tfidf(2).unwrap();
+    let lsa_cosine_similarity_matrix = lsa_cosine_similarity.get_lsa_cosine_similarity_matrix();
+
+    println!("LSA COSINE SIMILARITY MATRIX");
+    for row_index in 0..ncols {
+        println!(
+            "Document {}          {:.2}          {:.2}          {:.2}          {:.2}",
+            row_index + 1,
+            &lsa_cosine_similarity_matrix[(row_index, 0)],
+            &lsa_cosine_similarity_matrix[(row_index, 1)],
+            &lsa_cosine_similarity_matrix[(row_index, 2)],
+            &lsa_cosine_similarity_matrix[(row_index, 3)]
         )
     }
     println!("              Document 1    Document 2    Document 3    Document 4");

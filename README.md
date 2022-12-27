@@ -25,12 +25,16 @@ Term frequency–inverse document frequency (TF-IDF) is an algorithm used to fin
 1. Take the weighted matrix and then normalize each document vector in order to remove the influence of document length.
 
 The weighted, normalized matrix can then be used to find the cosine similarity between documents. 
-Normally, calculating the cosine similarity of two document vectors would look like $\cos \theta = \frac{D_i \cdot D_j}{|D_i| |D_j|}$. Since the matrix is already normalized, this simplifies to $\cos \theta = D_i \cdot D_j$. 
+Normally, calculating the cosine similarity of two document vectors would look like $\cos(\theta) = \frac{D_i \cdot D_j}{|D_i| |D_j|}$. Since the matrix is already normalized, this simplifies to $\cos(\theta) = D_i \cdot D_j$.
+
+The resulting $MxM$ matrix, where $M$ is the number of columns from the TF-IDF matrix, has 1's along the diagonal since the similarity of a document with itself is 1. The intersections of rows and columns, $M_{i,j}$, is the cosine similarity value between $D_i$ and $D_j$.
+
+## LSA
+Latent Semantic Analysis (LSA) finds document similarity based on the idea of concepts. LSA starts with the $m \times n$ TF-IDF matrix and uses Singular Value Decomposition (SVD) to reduce dimensionality of the matrix. The $k$ largest singular values are chosen to produce a reduced ${V_k}^T$ matrix, with $1 \le k \le n$. Each document column in the ${V_k}^T$ matrix is normalized and then we dot product them together. To shift the resulting dot product from a range of [-1...-1] to [0...1], we add 1 to the dot product and then divide by 2 ($\frac{1 + \cos(\theta)}{2}$).
 
 The resulting $MxM$ matrix, where $M$ is the number of columns from the TF-IDF matrix, has 1's along the diagonal since the similarity of a document with itself is 1. The intersections of rows and columns, $M_{i,j}$, is the cosine similarity value between $D_i$ and $D_j$.
 
 ## Roadmap
 * article summary (based on term frequency)
 * topic clustering
-* term-document frequency matrices
 * sentiment negation
