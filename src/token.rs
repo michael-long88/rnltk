@@ -303,7 +303,6 @@ pub fn get_stemmed_term_frequencies_from_word_vector_without_stop_words(word_tok
 /// let token_config = token::TokenConfig::default();
 /// let arg = vec!["fear", "leads", "to", "anger", "anger", "leads", "to", "hatred", "hatred", "leads", "to", "conflict", "conflict", "leads", "to", "suffering"];
 /// let word_counts = BTreeMap::from([("fear".to_string(), 1.), ("lead".to_string(), 4.), ("anger".to_string(), 2.), ("hatr".to_string(), 2.), ("conflict".to_string(), 2.), ("suffer".to_string(), 1.)]);
-/// let stop_words = token::get_stop_words();
 /// let term_frequencies = token::get_term_frequencies_from_word_vector_configurable(arg, token_config);
 ///
 /// assert_eq!(word_counts, term_frequencies);
@@ -616,7 +615,6 @@ pub fn get_stemmed_term_frequencies_from_sentences_without_stop_words(sentences:
 /// 
 /// let token_config = token::TokenConfig::default();
 /// let sentences = vec!["fear leads to anger", "anger leads to hatred", "hatred leads to conflict", "conflict leads to suffering."];
-/// let stop_words = token::get_stop_words();
 /// let word_counts1 = BTreeMap::from([
 ///     ("fear".to_string(), 1.), ("lead".to_string(), 1.), ("anger".to_string(), 1.), ("hatr".to_string(), 0.), ("conflict".to_string(), 0.), ("suffer".to_string(), 0.)
 /// ]);
