@@ -416,7 +416,6 @@ pub fn get_stemmed_term_frequencies_from_sentence_without_stop_words(sentence: &
 /// let token_config = token::TokenConfig::default();
 /// let sentence = "fear leads to anger, anger leads to hatred, hatred leads to conflict, conflict leads to suffering.";
 /// let word_counts = BTreeMap::from([("fear".to_string(), 1.), ("lead".to_string(), 4.), ("anger".to_string(), 2.), ("hatr".to_string(), 2.), ("conflict".to_string(), 2.), ("suffer".to_string(), 1.)]);
-/// let stop_words = token::get_stop_words();
 /// let term_frequencies = token::get_term_frequencies_from_sentence_configurable(sentence, token_config);
 ///
 /// assert_eq!(word_counts, term_frequencies);
@@ -667,10 +666,80 @@ mod tests {
     }
 
     #[test]
+    fn test_sentence_tokenization_without_stop_words() {
+        let stop_words = get_stop_words();
+        let text = "Why hello there. General Kenobi!";
+        let tokens = vec!["hello", "general", "kenobi"];
+        let tokenized_text = tokenize_sentence_without_stop_words(text, stop_words);
+        assert_eq!(tokens, tokenized_text);
+    }
+
+    #[test]
+    fn test_sentence_tokenization_with_stemming() {
+        let text = "Why hello there. General Kenobi!";
+        let tokens = vec!["why", "hello", "there", "gener", "kenobi"];
+        let tokenized_text = tokenize_stemmed_sentence(text);
+        assert_eq!(tokens, tokenized_text);
+    }
+
+    #[test]
+    fn test_sentence_tokenization_with_stemming_without_stop_words() {
+        let stop_words = get_stop_words();
+        let text = "Why hello there. General Kenobi!";
+        let tokens = vec!["hello", "gener", "kenobi"];
+        let tokenized_text = tokenize_stemmed_sentence_without_stop_words(text, stop_words);
+        assert_eq!(tokens, tokenized_text);
+    }
+
+    #[test]
+    fn test_sentence_tokenization_configurable() {
+        let token_config = TokenConfig::default();
+        let text = "Why hello there. General Kenobi!";
+        let tokens = vec!["hello", "gener", "kenobi"];
+        let tokenized_text = tokenize_sentence_configurable(text, token_config);
+        assert_eq!(tokens, tokenized_text);
+    }
+
+    #[test]
     fn test_term_frequencies_from_str_vector() {
         let tokens = vec!["fear", "leads", "to", "anger", "anger", "leads", "to", "hatred", "hatred", "leads", "to", "conflict", "conflict", "leads", "to", "suffering"];
         let word_counts = BTreeMap::from([("fear".to_string(), 1.), ("leads".to_string(), 4.), ("to".to_string(), 4.), ("anger".to_string(), 2.), ("hatred".to_string(), 2.), ("conflict".to_string(), 2.), ("suffering".to_string(), 1.)]);
         let term_frequencies = get_term_frequencies_from_word_vector(tokens);
+        assert_eq!(word_counts, term_frequencies);
+    }
+
+    #[test]
+    fn test_term_frequencies_from_str_vector_without_stop_words() {
+        let stop_words = get_stop_words();
+        let tokens = vec!["fear", "leads", "to", "anger", "anger", "leads", "to", "hatred", "hatred", "leads", "to", "conflict", "conflict", "leads", "to", "suffering"];
+        let word_counts = BTreeMap::from([("fear".to_string(), 1.), ("leads".to_string(), 4.), ("anger".to_string(), 2.), ("hatred".to_string(), 2.), ("conflict".to_string(), 2.), ("suffering".to_string(), 1.)]);
+        let term_frequencies = get_term_frequencies_from_word_vector_without_stop_words(tokens, stop_words);
+        assert_eq!(word_counts, term_frequencies);
+    }
+
+    #[test]
+    fn test_term_frequencies_from_str_vector_with_stemming() {
+        let tokens = vec!["fear", "leads", "to", "anger", "anger", "leads", "to", "hatred", "hatred", "leads", "to", "conflict", "conflict", "leads", "to", "suffering"];
+        let word_counts = BTreeMap::from([("fear".to_string(), 1.), ("lead".to_string(), 4.), ("to".to_string(), 4.), ("anger".to_string(), 2.), ("hatr".to_string(), 2.), ("conflict".to_string(), 2.), ("suffer".to_string(), 1.)]);
+        let term_frequencies = get_stemmed_term_frequencies_from_word_vector(tokens);
+        assert_eq!(word_counts, term_frequencies);
+    }
+
+    #[test]
+    fn test_term_frequencies_from_str_vector_with_stemming_without_stop_words() {
+        let stop_words = get_stop_words();
+        let tokens = vec!["fear", "leads", "to", "anger", "anger", "leads", "to", "hatred", "hatred", "leads", "to", "conflict", "conflict", "leads", "to", "suffering"];
+        let word_counts = BTreeMap::from([("fear".to_string(), 1.), ("lead".to_string(), 4.), ("anger".to_string(), 2.), ("hatr".to_string(), 2.), ("conflict".to_string(), 2.), ("suffer".to_string(), 1.)]);
+        let term_frequencies = get_stemmed_term_frequencies_from_word_vector_without_stop_words(tokens, stop_words);
+        assert_eq!(word_counts, term_frequencies);
+    }
+
+    #[test]
+    fn test_term_frequencies_from_str_vector_configurable() {
+        let token_config = TokenConfig::default();
+        let tokens = vec!["fear", "leads", "to", "anger", "anger", "leads", "to", "hatred", "hatred", "leads", "to", "conflict", "conflict", "leads", "to", "suffering"];
+        let word_counts = BTreeMap::from([("fear".to_string(), 1.), ("lead".to_string(), 4.), ("anger".to_string(), 2.), ("hatr".to_string(), 2.), ("conflict".to_string(), 2.), ("suffer".to_string(), 1.)]);
+        let term_frequencies = get_term_frequencies_from_word_vector_configurable(tokens, token_config);
         assert_eq!(word_counts, term_frequencies);
     }
 
@@ -684,12 +753,95 @@ mod tests {
             ("fear".to_string(), 0.), ("leads".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 1.), ("hatred".to_string(), 1.), ("conflict".to_string(), 0.), ("suffering".to_string(), 0.)
         ]);
         let word_counts3 = BTreeMap::from([
-            ("fear".to_string(), 0.), ("leads".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 0.), ("hatred".to_string(), 1.), ("conflict".to_string(),1.), ("suffering".to_string(), 0.)
+            ("fear".to_string(), 0.), ("leads".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 0.), ("hatred".to_string(), 1.), ("conflict".to_string(), 1.), ("suffering".to_string(), 0.)
         ]);
         let word_counts4 = BTreeMap::from([
             ("fear".to_string(), 0.), ("leads".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 0.), ("hatred".to_string(), 0.), ("conflict".to_string(), 1.), ("suffering".to_string(), 1.)
         ]);
         let term_frequencies = get_term_frequencies_from_sentences(&sentences);
+        
+        assert_eq!(vec![word_counts1, word_counts2, word_counts3, word_counts4], term_frequencies);
+    }
+
+    #[test]
+    fn test_term_frequencies_from_sentences_without_stop_words() {
+        let stop_words = get_stop_words();
+        let sentences = vec!["fear leads to anger", "anger leads to hatred", "hatred leads to conflict", "conflict leads to suffering."];
+        let word_counts1 = BTreeMap::from([
+            ("fear".to_string(), 1.), ("leads".to_string(), 1.), ("anger".to_string(), 1.), ("hatred".to_string(), 0.), ("conflict".to_string(), 0.), ("suffering".to_string(), 0.)
+        ]);
+        let word_counts2 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("leads".to_string(), 1.), ("anger".to_string(), 1.), ("hatred".to_string(), 1.), ("conflict".to_string(), 0.), ("suffering".to_string(), 0.)
+        ]);
+        let word_counts3 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("leads".to_string(), 1.), ("anger".to_string(), 0.), ("hatred".to_string(), 1.), ("conflict".to_string(), 1.), ("suffering".to_string(), 0.)
+        ]);
+        let word_counts4 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("leads".to_string(), 1.), ("anger".to_string(), 0.), ("hatred".to_string(), 0.), ("conflict".to_string(), 1.), ("suffering".to_string(), 1.)
+        ]);
+        let term_frequencies = get_term_frequencies_from_sentences_without_stop_words(&sentences, stop_words);
+        
+        assert_eq!(vec![word_counts1, word_counts2, word_counts3, word_counts4], term_frequencies);
+    }
+
+    #[test]
+    fn test_term_frequencies_from_sentences_with_stemming() {
+        let sentences = vec!["fear leads to anger", "anger leads to hatred", "hatred leads to conflict", "conflict leads to suffering."];
+        let word_counts1 = BTreeMap::from([
+            ("fear".to_string(), 1.), ("lead".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 1.), ("hatr".to_string(), 0.), ("conflict".to_string(), 0.), ("suffer".to_string(), 0.)
+        ]);
+        let word_counts2 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("lead".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 1.), ("hatr".to_string(), 1.), ("conflict".to_string(), 0.), ("suffer".to_string(), 0.)
+        ]);
+        let word_counts3 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("lead".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 0.), ("hatr".to_string(), 1.), ("conflict".to_string(),1.), ("suffer".to_string(), 0.)
+        ]);
+        let word_counts4 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("lead".to_string(), 1.), ("to".to_string(), 1.), ("anger".to_string(), 0.), ("hatr".to_string(), 0.), ("conflict".to_string(), 1.), ("suffer".to_string(), 1.)
+        ]);
+        let term_frequencies = get_stemmed_term_frequencies_from_sentences(&sentences);
+        
+        assert_eq!(vec![word_counts1, word_counts2, word_counts3, word_counts4], term_frequencies);
+    }
+
+    #[test]
+    fn test_term_frequencies_from_sentences_with_stemming_without_stop_words() {
+        let stop_words = get_stop_words();
+        let sentences = vec!["fear leads to anger", "anger leads to hatred", "hatred leads to conflict", "conflict leads to suffering."];
+        let word_counts1 = BTreeMap::from([
+            ("fear".to_string(), 1.), ("lead".to_string(), 1.), ("anger".to_string(), 1.), ("hatr".to_string(), 0.), ("conflict".to_string(), 0.), ("suffer".to_string(), 0.)
+        ]);
+        let word_counts2 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("lead".to_string(), 1.), ("anger".to_string(), 1.), ("hatr".to_string(), 1.), ("conflict".to_string(), 0.), ("suffer".to_string(), 0.)
+        ]);
+        let word_counts3 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("lead".to_string(), 1.), ("anger".to_string(), 0.), ("hatr".to_string(), 1.), ("conflict".to_string(), 1.), ("suffer".to_string(), 0.)
+        ]);
+        let word_counts4 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("lead".to_string(), 1.), ("anger".to_string(), 0.), ("hatr".to_string(), 0.), ("conflict".to_string(), 1.), ("suffer".to_string(), 1.)
+        ]);
+        let term_frequencies = get_stemmed_term_frequencies_from_sentences_without_stop_words(&sentences, stop_words);
+        
+        assert_eq!(vec![word_counts1, word_counts2, word_counts3, word_counts4], term_frequencies);
+    }
+
+    #[test]
+    fn test_term_frequencies_from_sentences_configurable() {
+        let token_config = TokenConfig::default();
+        let sentences = vec!["fear leads to anger", "anger leads to hatred", "hatred leads to conflict", "conflict leads to suffering."];
+        let word_counts1 = BTreeMap::from([
+            ("fear".to_string(), 1.), ("lead".to_string(), 1.), ("anger".to_string(), 1.), ("hatr".to_string(), 0.), ("conflict".to_string(), 0.), ("suffer".to_string(), 0.)
+        ]);
+        let word_counts2 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("lead".to_string(), 1.), ("anger".to_string(), 1.), ("hatr".to_string(), 1.), ("conflict".to_string(), 0.), ("suffer".to_string(), 0.)
+        ]);
+        let word_counts3 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("lead".to_string(), 1.), ("anger".to_string(), 0.), ("hatr".to_string(), 1.), ("conflict".to_string(), 1.), ("suffer".to_string(), 0.)
+        ]);
+        let word_counts4 = BTreeMap::from([
+            ("fear".to_string(), 0.), ("lead".to_string(), 1.), ("anger".to_string(), 0.), ("hatr".to_string(), 0.), ("conflict".to_string(), 1.), ("suffer".to_string(), 1.)
+        ]);
+        let term_frequencies = get_term_frequencies_from_sentences_configurable(&sentences, token_config);
         
         assert_eq!(vec![word_counts1, word_counts2, word_counts3, word_counts4], term_frequencies);
     }
