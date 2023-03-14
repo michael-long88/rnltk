@@ -39,7 +39,7 @@ fn stems_from_tokenized_sentence() {
 
     let stems: Vec<String> = tokens.iter().map(|token| stem::get(token).unwrap()).collect();
     let stems: Vec<&str> = stems.iter().map(|stem| &**stem).collect();
-    let stemmed_tokens = vec!["I", "betrai", "the", "bee"];
+    let stemmed_tokens = vec!["i", "betrai", "the", "bee"];
 
     assert_eq!(stems, stemmed_tokens);
 }

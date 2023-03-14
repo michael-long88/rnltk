@@ -61,7 +61,7 @@ pub fn tokenize_into_sentences(document: &str) -> Vec<String> {
 /// use rnltk::token;
 /// 
 /// let text = "Why hello there. General Kenobi!";
-/// let tokens = vec!["Why", "hello", "there", "General", "Kenobi"];
+/// let tokens = vec!["why", "hello", "there", "general", "kenobi"];
 /// let tokenized_text = token::tokenize_sentence(text);
 ///
 /// assert_eq!(tokens, tokenized_text);
@@ -70,7 +70,10 @@ pub fn tokenize_sentence(sentence: &str) -> Vec<String> {
     let punctuation = Regex::new(r#"[!"\#$%&'()*+,-./:;<=>?@\[\]^_`{|}~]+"#).expect("Invalid regex");
     let updated_sentence: &str = &punctuation.replace_all(sentence, "");
 
-    let mut tokens: Vec<String> = updated_sentence.split(' ').map(|s| s.trim().to_string()).collect();
+    let mut tokens: Vec<String> = updated_sentence
+        .split(' ')
+        .map(|s| s.trim().to_ascii_lowercase())
+        .collect();
     tokens.retain(|token| !token.is_empty());
 
     tokens
@@ -94,11 +97,8 @@ pub fn tokenize_sentence_without_stop_words(sentence: &str, stop_words: Vec<Stri
     let punctuation = Regex::new(r#"[!"\#$%&'()*+,-./:;<=>?@\[\]^_`{|}~]+"#).expect("Invalid regex");
     let updated_sentence: &str = &punctuation.replace_all(sentence, "");
 
-    let mut tokens: Vec<String> = updated_sentence
-        .split(' ')
-        .map(|s| s.trim().to_ascii_lowercase())
-        .collect();
-    tokens.retain(|token| !token.is_empty() && !stop_words.contains(token));
+    let mut tokens: Vec<String> = tokenize_sentence(updated_sentence);
+    tokens.retain(|token| !stop_words.contains(token));
 
     tokens
 }
@@ -658,7 +658,7 @@ mod tests {
     #[test]
     fn test_sentence_tokenization() {
         let text = "Why hello there. General Kenobi!";
-        let tokens = vec!["Why", "hello", "there", "General", "Kenobi"];
+        let tokens = vec!["why", "hello", "there", "general", "kenobi"];
         let tokenized_text = tokenize_sentence(text);
         assert_eq!(tokens, tokenized_text);
     }
