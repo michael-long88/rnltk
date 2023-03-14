@@ -12,7 +12,15 @@ fn main() {
 
     let documents = vec![document1, document2, document3, document4];
 
-    let documents_term_frequencies = token::get_term_frequencies_from_sentences(&documents);
+    let stop_words = token::get_stop_words();
+
+    let token_config = token::TokenConfig {
+        remove_stop_words: true,
+        stem: true,
+        stop_words
+    };
+
+    let documents_term_frequencies = token::get_term_frequencies_from_sentences_configurable(&documents, token_config);
 
     let mut all_term_frequencies: Vec<f64> = vec![];
 
