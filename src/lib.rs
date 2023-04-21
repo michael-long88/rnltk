@@ -10,7 +10,7 @@
 //! To start using RNLTK simply add the following to your Cargo.toml file:
 //! ```toml
 //! [dependencies]
-//! rnltk = "0.3.0"
+//! rnltk = "0.4.0"
 //! ```
 //! 
 //! While this project provides the basic framework for natural language processing, it does require you to provide
