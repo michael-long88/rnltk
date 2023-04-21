@@ -1,10 +1,10 @@
 //! Functionality for performing matrix operations on document term frequencies.
 
-use nalgebra::{Matrix, Dynamic, VecStorage};
+use nalgebra::{Matrix, Dyn, VecStorage};
 
 use crate::error::RnltkError;
 
-pub type GenericMatrix = Matrix<f64, Dynamic, Dynamic, VecStorage<f64, Dynamic, Dynamic>>;
+pub type GenericMatrix = Matrix<f64, Dyn, Dyn, VecStorage<f64, Dyn, Dyn>>;
 
 /// Struct for holding the matrix of `document_term_frequencies`
 #[derive(Debug, Clone)]
@@ -164,11 +164,11 @@ impl TfidfMatrix {
 
     /// Gets the Latent Semantic Analysis (LSA) cosine similarity matrix from the [`TfidfMatrix`]'s `tfidf_matrix`.
     /// 
-    /// Singular Value Decomposition (SVD) is applied to the \\(m \times \n\\) `tfidf_matrix` to reduce dimensionality.
+    /// Singular Value Decomposition (SVD) is applied to the \\(m \times n\\) `tfidf_matrix` to reduce dimensionality.
     /// The k largest singular values are chosen to produce a reduced \\({V_k}^T\\) matrix, with 
     /// \\(1 \le v \le n\\). Each document column in the \\({V_k}^T\\) matrix is normalized and then we 
     /// dot product them together. To shift the resulting dot product from a range of [-1...-1] to 
-    /// [0...1], we add 1 to the dot product and then divide by 2.
+    /// [0...1], we add 1 to the dot product and then divide by 2 (\\(\frac{1 + \cos(\theta)}{2}\\)).
     /// 
     /// The resulting matrix has 1's along the diagonal since the similarity of a document
     /// with itself is 1. The intersections of rows and columns, \\(M_{i,j}\\), is the cosine 
@@ -191,7 +191,7 @@ impl TfidfMatrix {
         let svd_matrix = self.tfidf_matrix.clone().svd(true, true);
         let mut v_t = svd_matrix.v_t.unwrap();
 
-        let mut v_tk = v_t.slice_mut((0, 0), (k, v_t.ncols()));
+        let mut v_tk = v_t.view_mut((0, 0), (k, v_t.ncols()));
 
         for mut column in v_tk.column_iter_mut() {
             let normalized = column.normalize();
