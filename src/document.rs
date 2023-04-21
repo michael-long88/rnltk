@@ -1,10 +1,10 @@
 //! Functionality for performing matrix operations on document term frequencies.
 
-use nalgebra::{Matrix, Dynamic, VecStorage};
+use nalgebra::{Matrix, Dyn, VecStorage};
 
 use crate::error::RnltkError;
 
-pub type GenericMatrix = Matrix<f64, Dynamic, Dynamic, VecStorage<f64, Dynamic, Dynamic>>;
+pub type GenericMatrix = Matrix<f64, Dyn, Dyn, VecStorage<f64, Dyn, Dyn>>;
 
 /// Struct for holding the matrix of `document_term_frequencies`
 #[derive(Debug, Clone)]
@@ -191,7 +191,7 @@ impl TfidfMatrix {
         let svd_matrix = self.tfidf_matrix.clone().svd(true, true);
         let mut v_t = svd_matrix.v_t.unwrap();
 
-        let mut v_tk = v_t.slice_mut((0, 0), (k, v_t.ncols()));
+        let mut v_tk = v_t.view_mut((0, 0), (k, v_t.ncols()));
 
         for mut column in v_tk.column_iter_mut() {
             let normalized = column.normalize();
